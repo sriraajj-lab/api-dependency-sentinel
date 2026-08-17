@@ -1,3 +1,7 @@
+/**
+ * STYLE REMINDER — The Signal Room: calm editorial intelligence, warm ivory,
+ * carbon ink, and Signal Vermilion accents. Keep the app shell restrained.
+ */
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
