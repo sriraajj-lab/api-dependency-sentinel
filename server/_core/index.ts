@@ -12,6 +12,7 @@ import { isSupportedGitHubWebhookEvent, verifyGitHubWebhookSignature } from "../
 import { createScheduledStripePollHandler } from "../scheduledStripePoll";
 import { createScheduledOpenAiPollHandler } from "../scheduledOpenAiPoll";
 import { createScheduledTwilioPollHandler } from "../scheduledTwilioPoll";
+import { createGitHubConnectHandlers } from "../githubConnect";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -61,6 +62,9 @@ async function startServer() {
   app.post("/api/scheduled/stripe-poll", createScheduledStripePollHandler());
   app.post("/api/scheduled/openai-poll", createScheduledOpenAiPollHandler());
   app.post("/api/scheduled/twilio-poll", createScheduledTwilioPollHandler());
+  const githubConnect = createGitHubConnectHandlers();
+  app.get("/api/github/connect/start", githubConnect.start);
+  app.get("/api/github/connect/callback", githubConnect.callback);
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));

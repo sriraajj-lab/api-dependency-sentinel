@@ -1,6 +1,6 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, pipelineFindings, providerPollRuns, providerPollStates, provenanceEdges, provenanceNodes, repositories, repositoryScanRuns, riskFindings, users } from "../drizzle/schema";
+import { githubConnectSessions, InsertUser, pipelineFindings, providerPollRuns, providerPollStates, provenanceEdges, provenanceNodes, repositories, repositoryScanRuns, riskFindings, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 import type { ProvenancePlan } from "./intelligence/provenance";
 import { calculateRiskScore } from "../shared/risk";
@@ -95,6 +95,48 @@ export async function listUserRepositories(userId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(repositories).where(eq(repositories.userId, userId)).orderBy(desc(repositories.updatedAt));
+}
+
+export async function createGitHubConnectSession(input: { state: string; userId: number; expiresAt: Date }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for GitHub connection onboarding.");
+  await db.insert(githubConnectSessions).values({ state: input.state, userId: input.userId, expiresAt: input.expiresAt });
+}
+
+export async function getGitHubConnectSession(state: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(githubConnectSessions).where(eq(githubConnectSessions.state, state)).limit(1);
+  return result[0];
+}
+
+export async function saveGitHubConnectCandidates(input: { state: string; candidatesJson: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for GitHub connection onboarding.");
+  await db.update(githubConnectSessions).set({ candidatesJson: input.candidatesJson }).where(eq(githubConnectSessions.state, input.state));
+}
+
+export async function getActiveGitHubConnectSession(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(githubConnectSessions)
+    .where(and(eq(githubConnectSessions.userId, userId), gt(githubConnectSessions.expiresAt, new Date())))
+    .orderBy(desc(githubConnectSessions.updatedAt)).limit(1);
+  return result[0];
+}
+
+export async function upsertConnectedRepository(input: { userId: number; githubRepositoryId: string; owner: string; name: string; defaultBranch: string; installationId: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for GitHub repository onboarding.");
+  const existing = await db.select({ id: repositories.id }).from(repositories)
+    .where(and(eq(repositories.userId, input.userId), eq(repositories.githubRepositoryId, input.githubRepositoryId))).limit(1);
+  const values = { owner: input.owner, name: input.name, defaultBranch: input.defaultBranch, installationId: input.installationId, connectionStatus: "connected" as const };
+  if (existing[0]) {
+    await db.update(repositories).set(values).where(eq(repositories.id, existing[0].id));
+    return existing[0].id;
+  }
+  const inserted = await db.insert(repositories).values({ userId: input.userId, githubRepositoryId: input.githubRepositoryId, ...values });
+  return Number(inserted[0].insertId);
 }
 
 export async function listRepositoryFindings(repositoryId: number) {

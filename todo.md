@@ -96,5 +96,7 @@
 - [x] Implement and test normalized OpenAI and Twilio change adapters.
 - [x] Validate live polling, installed-repository extraction, and three-provider evidence output before production release.
 - [ ] Design, implement, and validate scheduled OpenAI and Twilio provider polling with durable cursor state and compact audit records.
+- [ ] Verify a real scheduled OpenAI callback advances durable provider state and writes a bounded audit record.
+- [ ] Verify a real scheduled Twilio callback advances durable provider state and writes a bounded audit record.
 - [ ] Build and validate an authenticated repository-connection onboarding flow that securely lists permitted GitHub App repositories and records an owner-selected connection.
 - [ ] Prepare ten research-backed design-partner outreach drafts from the sales playbook and establish a review-and-approval sending workflow.

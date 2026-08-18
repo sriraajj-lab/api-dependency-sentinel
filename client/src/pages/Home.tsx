@@ -10,9 +10,7 @@ import {
   Radar,
   ShieldCheck,
   Sparkles,
-  X,
 } from "lucide-react";
-import { useState } from "react";
 
 const heroImage = "/manus-storage/api-sentinel-hero_1b0c4c7f.jpg";
 const mark = "/manus-storage/api-sentinel-mark_72bfe6eb.png";
@@ -30,8 +28,6 @@ const evidence = [
 ];
 
 export default function Home() {
-  const [modalOpen, setModalOpen] = useState(false);
-
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#101629] text-[#f7f8fc] selection:bg-[#f1c85b] selection:text-[#101629]">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#101629]/90 backdrop-blur-xl">
@@ -48,9 +44,9 @@ export default function Home() {
           </nav>
           <div className="flex items-center gap-2">
             <a href="/workspace" className="hidden rounded-lg px-3 py-2 text-[12px] font-semibold text-[#dfe4f2] transition-colors hover:bg-white/8 sm:inline-flex">Open demo</a>
-            <button onClick={() => setModalOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-[#f1c85b] px-3.5 py-2.5 text-[12px] font-bold text-[#11172a] shadow-[0_8px_24px_rgba(241,200,91,.18)] transition-transform hover:bg-[#f7d778] active:scale-[.97]">
+            <a href="/connect/github" className="inline-flex items-center gap-2 rounded-lg bg-[#f1c85b] px-3.5 py-2.5 text-[12px] font-bold text-[#11172a] shadow-[0_8px_24px_rgba(241,200,91,.18)] transition-transform hover:bg-[#f7d778] active:scale-[.97]">
               Connect GitHub <Github size={15} />
-            </button>
+            </a>
           </div>
         </div>
       </header>
@@ -74,7 +70,7 @@ export default function Home() {
               </p>
               <div className="mt-9 flex flex-wrap items-center gap-3">
                 <a href="/workspace" className="inline-flex items-center gap-2 rounded-lg bg-[#f1c85b] px-5 py-3.5 text-[12px] font-bold text-[#11172a] transition-transform hover:bg-[#f7d778] active:scale-[.97]">Explore the risk map <ArrowRight size={16} /></a>
-                <button onClick={() => setModalOpen(true)} className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/[.06] px-5 py-3.5 text-[12px] font-semibold text-white transition-colors hover:border-white/45 hover:bg-white/[.12]">See connection setup <ChevronRight size={16} /></button>
+                <a href="/connect/github" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/[.06] px-5 py-3.5 text-[12px] font-semibold text-white transition-colors hover:border-white/45 hover:bg-white/[.12]">Connect a repository <ChevronRight size={16} /></a>
               </div>
               <div className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-3 font-mono-ui text-[10px] uppercase tracking-[0.12em] text-[#9da8c1]">
                 <span className="flex items-center gap-2"><Check size={13} className="text-[#64d6a1]" /> Read-only repository access</span>
@@ -166,19 +162,6 @@ export default function Home() {
       <footer className="border-t border-white/10 bg-[#0c1121]">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-5 px-5 py-8 lg:flex-row lg:px-8"><div className="flex items-center gap-3"><img src={mark} className="h-7 w-7 rounded-md" alt="" /><span className="text-[13px] font-bold">API Dependency Sentinel</span></div><p className="font-mono-ui text-[10px] uppercase tracking-[.12em] text-[#7e89a4]">Source-linked upstream change intelligence · GitHub-first</p></div>
       </footer>
-
-      {modalOpen && (
-        <div className="fixed inset-0 z-[100] grid place-items-center bg-[#070a14]/80 p-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="connect-title">
-          <div className="w-full max-w-lg rounded-2xl border border-white/15 bg-[#171f38] p-6 shadow-2xl sm:p-8">
-            <div className="flex items-start justify-between gap-5"><div className="grid h-11 w-11 place-items-center rounded-xl bg-[#f1c85b] text-[#101629]"><Github size={21} /></div><button onClick={() => setModalOpen(false)} className="rounded-lg p-2 text-[#aeb8cf] hover:bg-white/8 hover:text-white" aria-label="Close connection setup"><X size={18} /></button></div>
-            <p className="mt-7 font-mono-ui text-[10px] uppercase tracking-[.14em] text-[#f1c85b]">Connection setup</p>
-            <h2 id="connect-title" className="mt-3 text-3xl font-bold tracking-[-.05em]">GitHub App installation is ready for configuration.</h2>
-            <p className="mt-4 text-[14px] leading-6 text-[#b8c0d5]">The product already supports a secure server-side connection model, but live installation is intentionally gated until the project’s GitHub App ID, private key, and webhook secret are registered. In the meantime, explore the fully labelled demo risk map.</p>
-            <div className="mt-6 rounded-xl border border-white/10 bg-black/15 p-4 font-mono-ui text-[11px] leading-6 text-[#aeb8cf]">Required before live monitoring:<br />• GitHub App ID + client credentials<br />• App private key<br />• Webhook secret + production callback URL</div>
-            <div className="mt-6 flex flex-wrap gap-3"><a href="/workspace" className="inline-flex items-center gap-2 rounded-lg bg-[#f1c85b] px-4 py-3 text-[12px] font-bold text-[#101629]">Open demo risk map <ArrowRight size={15} /></a><button onClick={() => setModalOpen(false)} className="rounded-lg border border-white/15 px-4 py-3 text-[12px] font-semibold text-white hover:bg-white/8">Close</button></div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

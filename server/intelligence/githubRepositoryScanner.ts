@@ -9,9 +9,9 @@ const MAX_TOTAL_BYTES = 1_500_000;
 
 type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
 
-type GitHubInstallation = { id: number };
+type GitHubInstallation = { id: number; account?: { login?: string } };
 type GitHubRepository = { full_name: string };
-type RepositoryMetadata = { full_name: string; default_branch: string };
+type RepositoryMetadata = { id: number; full_name: string; default_branch: string; owner?: { login?: string }; name?: string };
 type GitReference = { object: { sha: string } };
 type TreeEntry = { path: string; type: "blob" | "tree"; sha: string; size?: number };
 type GitTree = { tree: TreeEntry[]; truncated?: boolean };
@@ -24,6 +24,15 @@ export type GitHubRepositoryScan = {
   fileCount: number;
   totalBytes: number;
   evidence: ReturnType<typeof extractRepositoryEvidence>;
+};
+
+export type GitHubConnectCandidate = {
+  installationId: string;
+  githubRepositoryId: string;
+  owner: string;
+  name: string;
+  fullName: string;
+  defaultBranch: string;
 };
 
 function normalizePem(rawPem: string) {
@@ -78,6 +87,42 @@ async function findInstallationToken(repositoryFullName: string, appJwt: string,
     if (access.repositories.some(repository => repository.full_name === repositoryFullName)) return tokenPayload.token;
   }
   throw new Error(`The GitHub App is not installed for ${repositoryFullName}.`);
+}
+
+export async function exchangeGitHubUserCode(input: { code: string; redirectUri: string; clientId?: string; clientSecret?: string; fetchImpl?: FetchLike }) {
+  const clientId = input.clientId ?? process.env.GITHUB_APP_CLIENT_ID;
+  const clientSecret = input.clientSecret ?? process.env.GITHUB_APP_CLIENT_SECRET;
+  if (!clientId || !clientSecret) throw new Error("GitHub App OAuth client credentials must be configured server-side.");
+  const response = await (input.fetchImpl ?? fetch)("https://github.com/login/oauth/access_token", {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/json", "User-Agent": "api-dependency-sentinel/1.0" },
+    body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, code: input.code, redirect_uri: input.redirectUri }),
+  });
+  if (!response.ok) throw new Error(`GitHub user authorization exchange failed with HTTP ${response.status}.`);
+  const payload = (await response.json()) as { access_token?: string; error?: string; error_description?: string };
+  if (!payload.access_token) throw new Error(`GitHub user authorization exchange failed: ${payload.error_description ?? payload.error ?? "missing access token"}`);
+  return payload.access_token;
+}
+
+export async function listGitHubConnectCandidates(input: { userAccessToken: string; appId?: string; privateKey?: string; fetchImpl?: FetchLike }): Promise<GitHubConnectCandidate[]> {
+  const appId = input.appId ?? process.env.GITHUB_APP_ID;
+  const privateKey = input.privateKey ?? process.env.GITHUB_APP_PRIVATE_KEY;
+  if (!appId || !privateKey) throw new Error("GitHub App ID and private key must be configured server-side.");
+  const fetchImpl = input.fetchImpl ?? fetch;
+  const appJwt = await createGitHubAppJwt(appId, privateKey);
+  const userInstallations = await githubJson<{ installations: GitHubInstallation[] }>(`${GITHUB_API}/user/installations?per_page=100`, input.userAccessToken, fetchImpl);
+  const candidates: GitHubConnectCandidate[] = [];
+  for (const installation of userInstallations.installations) {
+    const tokenPayload = await githubJson<{ token: string }>(`${GITHUB_API}/app/installations/${installation.id}/access_tokens`, appJwt, fetchImpl, "POST");
+    const access = await githubJson<{ repositories: GitHubRepository[] }>(`${GITHUB_API}/installation/repositories?per_page=100`, tokenPayload.token, fetchImpl);
+    for (const repository of access.repositories) {
+      const metadata = await githubJson<RepositoryMetadata>(`${GITHUB_API}/repos/${repository.full_name}`, tokenPayload.token, fetchImpl);
+      const [owner, name] = metadata.full_name.split("/");
+      if (!owner || !name) continue;
+      candidates.push({ installationId: String(installation.id), githubRepositoryId: String(metadata.id), owner: metadata.owner?.login ?? owner, name: metadata.name ?? name, fullName: metadata.full_name, defaultBranch: metadata.default_branch });
+    }
+  }
+  return candidates.sort((left, right) => left.fullName.localeCompare(right.fullName));
 }
 
 export async function scanInstalledTypeScriptRepository(input: {

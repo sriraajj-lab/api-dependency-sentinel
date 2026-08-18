@@ -39,6 +39,20 @@ export const repositories = mysqlTable("repositories", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+/** Short-lived server-side GitHub App authorization handoffs; user tokens are never stored. */
+export const githubConnectSessions = mysqlTable(
+  "githubConnectSessions",
+  {
+    state: varchar("state", { length: 128 }).primaryKey(),
+    userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+    candidatesJson: text("candidatesJson"),
+    expiresAt: timestamp("expiresAt").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("github_connect_session_user_idx").on(table.userId, table.expiresAt)]
+);
+
 export const riskFindings = mysqlTable("riskFindings", {
   id: int("id").autoincrement().primaryKey(),
   repositoryId: int("repositoryId").notNull().references(() => repositories.id, { onDelete: "cascade" }),

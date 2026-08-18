@@ -11,6 +11,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import LiveWorkspace from "./pages/LiveWorkspace";
 import Workspace from "./pages/Workspace";
+import GitHubConnect from "./pages/GitHubConnect";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -19,6 +20,7 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/workspace"} component={Workspace} />
       <Route path={"/workspace/live"} component={LiveWorkspace} />
+      <Route path={"/connect/github"} component={GitHubConnect} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

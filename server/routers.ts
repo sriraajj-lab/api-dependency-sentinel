@@ -2,7 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { getRepositoryForUser, listPipelineFindings, listRepositoryFindings, listUserRepositories, persistProvenancePlan, recordRepositoryScanRun } from "./db";
+import { getActiveGitHubConnectSession, getRepositoryForUser, listPipelineFindings, listRepositoryFindings, listUserRepositories, persistProvenancePlan, recordRepositoryScanRun, upsertConnectedRepository } from "./db";
 import { buildDemoRiskMap, supportedProviders } from "./sentinel";
 import { buildPipelinePreviewArtifact, buildPipelinePreviewRiskMap } from "./intelligence/pipelinePreview";
 import { scanInstalledTypeScriptRepository } from "./intelligence/githubRepositoryScanner";
@@ -26,6 +26,39 @@ export const appRouter = router({
     demoRiskMap: publicProcedure.query(() => buildDemoRiskMap()),
     pipelinePreview: publicProcedure.query(() => buildPipelinePreviewRiskMap()),
     supportedProviders: publicProcedure.query(() => supportedProviders),
+    githubConnectStatus: protectedProcedure.query(async ({ ctx }) => {
+      const session = await getActiveGitHubConnectSession(ctx.user.id);
+      if (!session?.candidatesJson) return { status: "not_authorized" as const, candidates: [] };
+      try {
+        const candidates = JSON.parse(session.candidatesJson) as Array<{ installationId: string; githubRepositoryId: string; owner: string; name: string; fullName: string; defaultBranch: string }>;
+        return { status: "ready" as const, candidates };
+      } catch {
+        return { status: "not_authorized" as const, candidates: [] };
+      }
+    }),
+    connectGitHubRepository: protectedProcedure
+      .input(z.object({ githubRepositoryId: z.string().min(1).max(64) }))
+      .mutation(async ({ ctx, input }) => {
+        const session = await getActiveGitHubConnectSession(ctx.user.id);
+        if (!session?.candidatesJson) throw new TRPCError({ code: "BAD_REQUEST", message: "Authorize GitHub before selecting a repository." });
+        let candidates: Array<{ installationId: string; githubRepositoryId: string; owner: string; name: string; fullName: string; defaultBranch: string }>;
+        try {
+          candidates = JSON.parse(session.candidatesJson) as typeof candidates;
+        } catch {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "GitHub connection candidates are invalid. Authorize GitHub again." });
+        }
+        const candidate = candidates.find(item => item.githubRepositoryId === input.githubRepositoryId);
+        if (!candidate) throw new TRPCError({ code: "NOT_FOUND", message: "Selected repository is not available through your verified GitHub installation." });
+        const repositoryId = await upsertConnectedRepository({
+          userId: ctx.user.id,
+          githubRepositoryId: candidate.githubRepositoryId,
+          owner: candidate.owner,
+          name: candidate.name,
+          defaultBranch: candidate.defaultBranch,
+          installationId: candidate.installationId,
+        });
+        return { repositoryId, repository: candidate };
+      }),
     workspace: protectedProcedure.query(async ({ ctx }) => {
       const repositories = await listUserRepositories(ctx.user.id);
       const selectedRepository = repositories[0];
