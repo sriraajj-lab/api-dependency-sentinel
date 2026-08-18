@@ -34,12 +34,22 @@ The App ID, client ID, client secret, and private key have been created and stor
 
 ## Current configuration state
 
-The product is published at **https://venturesig-e4ipjaps.manus.space**. The GitHub App’s homepage has been updated from the temporary preview to this canonical production URL. Repository Contents is configured as **Read-only** and Metadata remains GitHub’s mandatory baseline. All other optional repository, organization, and account permissions remain at **No access**.
+The product is published at **https://venturesig-e4ipjaps.manus.space**. The GitHub App’s homepage has been updated from the temporary preview to this canonical production URL. A live configuration audit found an unintended **Copilot agent settings** selection, which was corrected and saved: Repository Contents is **Read-only**, Copilot agent settings is **No access**, and Metadata remains GitHub’s mandatory baseline. All other optional repository, organization, and account permissions remain at **No access**.
 
 The GitHub App webhook is configured with the HTTPS endpoint `https://venturesig-e4ipjaps.manus.space/api/github/webhook`, a managed high-entropy secret, and SSL certificate verification enabled. The production server handler verifies `X-Hub-Signature-256` before accepting an event; it must be deployed before event subscriptions are enabled. The product does not write to customer repositories or create GitHub issues.
 
+The manual GitHub App event subscription is **Push only**. `installation` and `installation_repositories` are received automatically by every GitHub App and are handled by the same verified endpoint; no other manual event subscription is enabled.
+
+## Isolated live validation
+
+The App is installed on the private repository [`sriraajj-lab/api-dependency-sentinel-test`](https://github.com/sriraajj-lab/api-dependency-sentinel-test) only. This repository contains a synthetic API dependency fixture and no customer data or credentials. GitHub’s installation screen confirmed **Read** access to code and metadata, with no other repository selected.
+
+The production runtime accepted GitHub-signed `installation` and `push` deliveries from this test installation. A server-side integration test also created a short-lived installation token and verified it could enumerate only the isolated fixture repository. No customer repository was installed, and no repository write capability was granted.
+
 ## Production activation prerequisites
 
-Before enabling live installations, deploy and verify the signed webhook callback, subscribe only to installation, installation-repositories, and push events, and install the App on a dedicated test repository. Keep Issues at No access until an explicit reviewed-issue action has been implemented and approved.
+Before enabling live installations, deploy and verify the signed webhook callback, manually subscribe only to **Push**, and install the App on a dedicated test repository. GitHub documents that every GitHub App receives `installation` and `installation_repositories` events by default and that neither can be manually subscribed; the webhook handler accepts both automatic event types and Push. Keep Issues at No access until an explicit reviewed-issue action has been implemented and approved.
+
+GitHub’s current guidance is [Types of webhooks](https://docs.github.com/en/webhooks/types-of-webhooks) and [Webhook events and payloads](https://docs.github.com/en/webhooks/webhook-events-and-payloads#installation). These sources also recommend subscribing only to events the endpoint handles and using `X-Hub-Signature-256` for delivery verification.
 
 The registration review specifically verified that Repository Contents—not an adjacent Copilot setting—was set to Read-only before creation.

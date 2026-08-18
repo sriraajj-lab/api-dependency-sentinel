@@ -18,15 +18,15 @@
 - [x] Translate the local micro-LLM proposal into a precise product architecture and buyer promise.
 - [x] Research existing private-AI, small-model, RAG, and agent-workflow offerings.
 - [x] Assess realistic deployment, cost, model-quality, security, and support constraints.
-- [ ] Identify a narrow paid-pilot wedge with a rapid MRR path and repeatable deployment model.
-- [ ] Decide whether this idea should outrank ScopeLock and ProofPass, and document the validation plan.
+- [x] Identify a narrow paid-pilot wedge with a rapid MRR path and repeatable deployment model. Deprioritized after API Dependency Sentinel was selected as the launch product.
+- [x] Decide whether this idea should outrank ScopeLock and ProofPass, and document the validation plan. Deprioritized after API Dependency Sentinel was selected as the launch product.
 
 # Reverse-Agent Concept Checklist
 
 - [x] Define the reverse-agent principle: observe repeated work, infer the workflow, and propose a bounded agent with approval gates.
 - [x] Research current agent builders, process-mining tools, and agent-observability products to avoid a generic agent platform.
-- [ ] Generate narrow reverse-agent wedges with a direct buyer, a measurable outcome, and a low-friction data source.
-- [ ] Select the strongest fast-MRR concept and define its 30-day proof plan.
+- [x] Generate narrow reverse-agent wedges with a direct buyer, a measurable outcome, and a low-friction data source. Deprioritized after API Dependency Sentinel was selected as the launch product.
+- [x] Select the strongest fast-MRR concept and define its 30-day proof plan. Deprioritized after API Dependency Sentinel was selected as the launch product.
 
 # AI Operations Cartographer Checklist
 
@@ -40,7 +40,7 @@
 - [x] Define the exact feature combination that would count as a direct Workprint match.
 - [x] Collect and verify direct competitors across process intelligence, task mining, agent generation, and AI transformation.
 - [x] Compare competitors feature by feature and identify any defensible product boundary.
-- [ ] Decide whether to pursue, narrow, or stop the Workprint concept.
+- [x] Decide whether to pursue, narrow, or stop the Workprint concept. Stopped in favor of API Dependency Sentinel as the launch product.
 
 # Fast-MRR Winner Sprint Checklist
 
@@ -65,12 +65,15 @@
 - [x] Verify the supplied GitHub credentials against the GitHub API without exposing them in project files or client code.
 - [x] Determine whether an existing GitHub App is available and document any remaining server-side credential requirements.
 - [x] Keep live GitHub installation and webhook flows disabled until an app ID, private key, and webhook secret are configured securely.
-- [ ] Obtain GitHub App credentials and webhook permissions to activate the already designed live installation and event flow.
+- [x] Obtain GitHub App credentials and webhook permissions to activate the already designed live installation and event flow.
 - [x] Restore the missing workspace route and eliminate the frontend import failure.
 - [x] Validate the GitHub App private key through server-side App authentication.
 - [x] Run the full test suite and visually verify the landing and workspace experiences.
 - [x] Save a new product checkpoint and deliver the validated MVP and launch handoff.
 - [x] Verify the published Sentinel endpoint and document the canonical production URL.
 - [x] Replace the GitHub App homepage with the published product URL.
-- [ ] Implement and validate the signed GitHub webhook callback before enabling live events.
-- [ ] Install the GitHub App on a dedicated test repository with read-only repository contents.
+- [x] Implement and validate the signed GitHub webhook callback before enabling live events.
+- [x] Correct the GitHub App permission selection to Contents read-only and Copilot agent settings no access.
+- [x] Install the GitHub App on a dedicated test repository with read-only repository contents.
+- [x] Create the private api-dependency-sentinel-test repository with a synthetic integration fixture.
+- [x] Confirm the test installation emits and accepts a signed GitHub delivery without accessing an existing customer project.
