@@ -19,6 +19,7 @@ type OpenApiDocument = {
 };
 
 const STRIPE_OPENAPI_URL = "https://raw.githubusercontent.com/stripe/openapi";
+const STRIPE_OPENAPI_PATH = "openapi/spec3.json";
 const STRIPE_COMMIT_URL = "https://api.github.com/repos/stripe/openapi/commits/master";
 const HTTP_METHODS = new Set(["get", "post", "put", "patch", "delete"]);
 
@@ -187,7 +188,7 @@ export async function fetchStripeOpenApiConditional(
   fetchImpl: FetchLike = fetch
 ): Promise<StripeConditionalFetchResult> {
   const commitSha = await fetchStripeCommit(fetchImpl);
-  const sourceUrl = `${STRIPE_OPENAPI_URL}/${encodeURIComponent(commitSha)}/latest/spec3.json`;
+  const sourceUrl = `${STRIPE_OPENAPI_URL}/${encodeURIComponent(commitSha)}/${STRIPE_OPENAPI_PATH}`;
   const headers: Record<string, string> = {
     Accept: "application/json",
     "User-Agent": "api-dependency-sentinel/1.0",
@@ -232,7 +233,7 @@ export async function fetchStripeOpenApi(ref = "master", fetchImpl: FetchLike = 
     throw new Error("Stripe OpenAPI baseline unexpectedly returned 304 without an ETag cursor.");
   }
   const encodedRef = encodeURIComponent(ref);
-  const sourceUrl = `${STRIPE_OPENAPI_URL}/${encodedRef}/latest/spec3.json`;
+  const sourceUrl = `${STRIPE_OPENAPI_URL}/${encodedRef}/${STRIPE_OPENAPI_PATH}`;
   let response: Response;
 
   try {

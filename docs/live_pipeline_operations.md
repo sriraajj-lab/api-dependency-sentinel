@@ -6,6 +6,8 @@ The first live extension turns the existing evidence pipeline into a determinist
 
 The initial six-hour cadence deliberately favours reliable, low-noise change capture over near-real-time polling. It can later be changed through the project-level job configuration without replacing the handler or data model.
 
+The deployed project now has a single enabled project-level job named `stripe-revision-poll-primary` targeting `/api/scheduled/stripe-poll` on the six-hour UTC cadence. Its platform task identifier is stored only in the durable provider cursor state, which the callback checks before it accepts a cron delivery.
+
 ## Safety and idempotency contract
 
 | Concern | Required behaviour |
@@ -27,3 +29,10 @@ The implementation is complete only when the following are true:
 3. A short-lived GitHub App installation token reads the selected test repository’s default-branch files and produces `RepositoryEvidence` from GitHub content rather than local fixture files.
 4. OpenAI and Twilio adapters produce normalized source snapshots and deterministic change objects using the shared contracts.
 5. The complete test suite covers unchanged polling, changed polling, repository authorization, and three-provider adapter output.
+
+## Adapter source ledger
+
+| Provider | Primary source | Adapter evidence strategy |
+|---|---|---|
+| OpenAI | [Official API changelog](https://developers.openai.com/api/docs/changelog) | Snapshot the official dated changelog document, retain its content hash, and normalize entries with their month/date heading and named API model, endpoint, or SDK surface as a document-excerpt locator. The official page has a dedicated changelog heading and month-level dated sections. |
+| Twilio | [Official OpenAPI repository](https://github.com/twilio/twilio-oai) and [product changelog](https://www.twilio.com/en-us/changelog) | Prefer versioned OpenAPI documents for operation-level differences; use official changelog excerpts only when a structured surface is not available. The official repository exposes a `spec` directory, Git commit history, tags, and a `CHANGES.md` record, enabling an adapter to record both a document path and immutable commit reference. |

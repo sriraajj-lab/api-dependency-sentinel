@@ -90,8 +90,8 @@
 - [x] Re-open the published workspace after rollout and confirm the rendered page shows the Stripe pipeline evidence preview.
 - [x] Define safe cursor, retry, idempotency, and tenant-isolation requirements for scheduled provider polling.
 - [ ] Implement and test scheduled Stripe revision polling using durable ETag and commit cursors.
-- [ ] Register the project-level Stripe polling job and persist its task identifier in the provider cursor state.
+- [x] Register the project-level Stripe polling job and persist its task identifier in the provider cursor state.
 - [ ] Verify the deployed cron callback updates Stripe polling state and bounded audit records after a real execution.
-- [ ] Implement and test a read-only GitHub installation scan of api-dependency-sentinel-test.
-- [ ] Implement and test normalized OpenAI and Twilio change adapters.
+- [x] Implement and test a read-only GitHub installation scan of api-dependency-sentinel-test.
+- [x] Implement and test normalized OpenAI and Twilio change adapters.
 - [ ] Validate live polling, installed-repository extraction, and three-provider evidence output before production release.

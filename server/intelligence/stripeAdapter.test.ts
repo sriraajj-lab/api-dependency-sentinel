@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SourceSnapshot } from "../../shared/intelligence";
-import { diffStripeOpenApi } from "./stripeAdapter";
+import { diffStripeOpenApi, fetchStripeOpenApiConditional } from "./stripeAdapter";
 
 function snapshot(ref: string, document: unknown): SourceSnapshot {
   const body = JSON.stringify(document);
@@ -17,6 +17,36 @@ function snapshot(ref: string, document: unknown): SourceSnapshot {
 }
 
 describe("Stripe OpenAPI adapter", () => {
+  it("fetches the canonical commit-pinned OpenAPI file used by scheduled polling", async () => {
+    const commitSha = "a".repeat(40);
+    const requestedUrls: string[] = [];
+    const fetchImpl = async (input: string | URL | Request) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      if (url.includes("/commits/master")) {
+        return new Response(JSON.stringify({ sha: commitSha }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ paths: {} }), {
+        status: 200,
+        headers: { "content-type": "application/json", etag: "stripe-etag" },
+      });
+    };
+
+    const result = await fetchStripeOpenApiConditional({}, fetchImpl);
+
+    expect(result).toMatchObject({
+      status: "changed",
+      cursor: { commitSha, etag: "stripe-etag" },
+    });
+    expect(requestedUrls).toEqual([
+      "https://api.github.com/repos/stripe/openapi/commits/master",
+      `https://raw.githubusercontent.com/stripe/openapi/${commitSha}/openapi/spec3.json`,
+    ]);
+  });
+
   it("detects a request property becoming required with source-linked structured evidence", () => {
     const prior = snapshot("before", {
       paths: {

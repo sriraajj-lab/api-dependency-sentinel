@@ -2,9 +2,10 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { listPipelineFindings, listRepositoryFindings, listUserRepositories, persistProvenancePlan } from "./db";
+import { getRepositoryForUser, listPipelineFindings, listRepositoryFindings, listUserRepositories, persistProvenancePlan, recordRepositoryScanRun } from "./db";
 import { buildDemoRiskMap, supportedProviders } from "./sentinel";
 import { buildPipelinePreviewArtifact, buildPipelinePreviewRiskMap } from "./intelligence/pipelinePreview";
+import { scanInstalledTypeScriptRepository } from "./intelligence/githubRepositoryScanner";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -45,6 +46,35 @@ export const appRouter = router({
         const artifact = buildPipelinePreviewArtifact();
         const findingId = await persistProvenancePlan(input.repositoryId, artifact.plan);
         return { findingId, evidencePacket: artifact.plan.evidencePacket };
+      }),
+    scanInstalledRepository: protectedProcedure
+      .input(z.object({ repositoryId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const repository = await getRepositoryForUser(input.repositoryId, ctx.user.id);
+        if (!repository) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Repository is not available to the current user." });
+        }
+        try {
+          const scan = await scanInstalledTypeScriptRepository({ repositoryFullName: `${repository.owner}/${repository.name}` });
+          await recordRepositoryScanRun({
+            repositoryId: repository.id,
+            commitSha: scan.commitSha,
+            status: "succeeded",
+            fileCount: scan.fileCount,
+            dependencyCount: scan.evidence.dependencies.length,
+            codeEvidenceCount: scan.evidence.codeEvidence.length,
+          });
+          return scan;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown GitHub repository scan failure";
+          await recordRepositoryScanRun({
+            repositoryId: repository.id,
+            commitSha: "unavailable",
+            status: "failed",
+            errorSummary: message,
+          });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Read-only repository scan failed." });
+        }
       }),
     persistedPipelineWorkspace: protectedProcedure.query(async ({ ctx }) => {
       const repositories = await listUserRepositories(ctx.user.id);
