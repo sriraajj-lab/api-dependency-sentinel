@@ -10,6 +10,8 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { isSupportedGitHubWebhookEvent, verifyGitHubWebhookSignature } from "../githubWebhook";
 import { createScheduledStripePollHandler } from "../scheduledStripePoll";
+import { createScheduledOpenAiPollHandler } from "../scheduledOpenAiPoll";
+import { createScheduledTwilioPollHandler } from "../scheduledTwilioPoll";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -57,6 +59,8 @@ async function startServer() {
     return res.status(202).json({ accepted: true, event });
   });
   app.post("/api/scheduled/stripe-poll", createScheduledStripePollHandler());
+  app.post("/api/scheduled/openai-poll", createScheduledOpenAiPollHandler());
+  app.post("/api/scheduled/twilio-poll", createScheduledTwilioPollHandler());
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));

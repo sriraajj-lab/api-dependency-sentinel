@@ -3,6 +3,16 @@ import type { ProviderChange, SourceSnapshot } from "../../shared/intelligence";
 
 const OPENAI_CHANGELOG_URL = "https://developers.openai.com/api/docs/changelog";
 
+export type OpenAiSourceCursor = {
+  etag?: string | null;
+  sourceRef?: string | null;
+  contentSha256?: string | null;
+};
+
+export type OpenAiConditionalFetchResult =
+  | { status: "unchanged"; sourceUrl: string; cursor: { etag?: string | null; sourceRef: string; contentSha256: string } }
+  | { status: "changed"; snapshot: SourceSnapshot; cursor: { etag?: string | null; sourceRef: string; contentSha256: string } };
+
 function sha256(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
@@ -43,22 +53,45 @@ function firstSubjects(text: string): ProviderChange["subjects"] {
   return subjects.length > 0 ? subjects : [{ provider: "openai", kind: "sdk_method", canonicalName: "openai-api-changelog-entry", selector: {} }];
 }
 
-export async function fetchOpenAiChangelog(fetchImpl: typeof fetch = fetch): Promise<SourceSnapshot> {
-  const response = await fetchImpl(OPENAI_CHANGELOG_URL, { headers: { Accept: "text/html", "User-Agent": "api-dependency-sentinel/1.0" } });
+export async function fetchOpenAiChangelogConditional(
+  cursor: OpenAiSourceCursor = {},
+  fetchImpl: typeof fetch = fetch
+): Promise<OpenAiConditionalFetchResult> {
+  const headers: Record<string, string> = { Accept: "text/html", "User-Agent": "api-dependency-sentinel/1.0" };
+  if (cursor.etag) headers["If-None-Match"] = cursor.etag;
+  const response = await fetchImpl(OPENAI_CHANGELOG_URL, { headers });
+  const etag = response.headers.get("etag") ?? cursor.etag ?? undefined;
+  const knownRef = etag ?? cursor.sourceRef ?? cursor.contentSha256;
+  if (response.status === 304) {
+    if (!knownRef || !cursor.contentSha256) throw new Error("OpenAI changelog returned 304 without a durable prior cursor.");
+    return { status: "unchanged", sourceUrl: OPENAI_CHANGELOG_URL, cursor: { etag, sourceRef: knownRef, contentSha256: cursor.contentSha256 } };
+  }
   if (!response.ok) throw new Error(`OpenAI changelog acquisition failed with HTTP ${response.status}.`);
   const rawBody = await response.text();
   const body = htmlToText(rawBody);
   if (!body.includes("Changelog")) throw new Error("OpenAI changelog did not contain the expected heading.");
-  return {
+  const contentSha256 = sha256(rawBody);
+  const sourceRef = etag ?? contentSha256;
+  const snapshot: SourceSnapshot = {
     provider: "openai",
     sourceKind: "changelog",
     sourceUrl: OPENAI_CHANGELOG_URL,
-    sourceRef: response.headers.get("etag") ?? sha256(rawBody),
+    sourceRef,
     retrievedAt: new Date().toISOString(),
-    contentSha256: sha256(rawBody),
+    contentSha256,
     contentType: response.headers.get("content-type") ?? "text/html",
     body,
   };
+  if (cursor.contentSha256 === contentSha256) {
+    return { status: "unchanged", sourceUrl: OPENAI_CHANGELOG_URL, cursor: { etag, sourceRef, contentSha256 } };
+  }
+  return { status: "changed", snapshot, cursor: { etag, sourceRef, contentSha256 } };
+}
+
+export async function fetchOpenAiChangelog(fetchImpl: typeof fetch = fetch): Promise<SourceSnapshot> {
+  const result = await fetchOpenAiChangelogConditional({}, fetchImpl);
+  if (result.status === "changed") return result.snapshot;
+  throw new Error("OpenAI changelog baseline unexpectedly returned unchanged without a cursor.");
 }
 
 export function normalizeOpenAiChangelog(snapshot: SourceSnapshot): ProviderChange[] {
