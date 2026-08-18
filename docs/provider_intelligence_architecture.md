@@ -509,6 +509,10 @@ The initial prototype now includes a Stripe OpenAPI adapter and deterministic st
 
 The database schema includes append-only provenance nodes and edges plus materialized pipeline findings. An authenticated server procedure authorizes the repository against the current user before persisting a plan, and a separate authenticated reviewer route returns only the selected user’s stored findings and evidence packets. Unauthenticated visitors remain on the public pipeline preview and cannot access saved evidence.
 
+The production deployment was verified after rollout by calling the published `sentinel.pipelinePreview` procedure. It returned the expected Stripe structured-diff finding, repository commit, and provenance-backed evidence payload rather than the prior demonstration data.
+
+A final browser verification of the published `/workspace` route confirmed that the rendered page now shows the Pipeline Evidence Preview, the isolated Stripe structured-diff fixture, the matched TypeScript code location, the repository commit, the matcher version, and the provenance-chain summary.
+
 ## References
 
 [1]: https://docs.stripe.com/changelog "Stripe Developer Changelog"

@@ -85,5 +85,6 @@
 - [x] Wire provenance-plan persistence into an authenticated executable pipeline procedure.
 - [x] Load persisted pipeline findings and evidence packets for the owning repository in the reviewer workspace.
 - [x] Add an end-to-end integration test that verifies provenance and pipeline-finding rows are written and readable.
-- [ ] Run an end-to-end fixture validation, publish the pipeline, and document the handoff.
-- [ ] Verify the published production workspace serves the updated pipeline evidence view.
+- [x] Run an end-to-end fixture validation, publish the pipeline, and document the handoff.
+- [x] Verify the published production workspace serves the updated pipeline evidence view.
+- [x] Re-open the published workspace after rollout and confirm the rendered page shows the Stripe pipeline evidence preview.
