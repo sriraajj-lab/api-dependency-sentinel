@@ -78,3 +78,12 @@
 - [x] Create the private api-dependency-sentinel-test repository with a synthetic integration fixture.
 - [x] Confirm the test installation emits and accepts a signed GitHub delivery without accessing an existing customer project.
 - [x] Produce an implementation-ready architecture brief for provider adapters, the provenance graph, and a TypeScript/Node change-to-code matcher.
+- [x] Define the first pipeline schema and acceptance fixtures for Stripe changes, TypeScript repository evidence, and reviewable findings.
+- [x] Implement and test the Stripe OpenAPI source adapter and structured diff baseline.
+- [x] Implement and test TypeScript dependency inventory and direct SDK-call AST evidence extraction.
+- [x] Persist provenance-backed impact findings and expose a reviewer evidence view in the workspace.
+- [x] Wire provenance-plan persistence into an authenticated executable pipeline procedure.
+- [x] Load persisted pipeline findings and evidence packets for the owning repository in the reviewer workspace.
+- [x] Add an end-to-end integration test that verifies provenance and pipeline-finding rows are written and readable.
+- [ ] Run an end-to-end fixture validation, publish the pipeline, and document the handoff.
+- [ ] Verify the published production workspace serves the updated pipeline evidence view.

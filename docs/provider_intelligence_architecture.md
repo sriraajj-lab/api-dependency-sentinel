@@ -503,6 +503,12 @@ When the default branch changes, re-run only affected files where possible. A fi
 
 The prototype should intentionally decline difficult cases. A precise system that says “unconfirmed wrapper or dynamic call” is more credible than a broad system that invents impact.
 
+## 6. Implemented prototype status
+
+The initial prototype now includes a Stripe OpenAPI adapter and deterministic structured diff, a TypeScript/Node dependency and AST extractor, direct-call matching, and an evidence-plan builder. A public workspace route presents a clearly labelled controlled fixture that runs those real modules end to end. The fixture is intentionally not presented as a customer finding.
+
+The database schema includes append-only provenance nodes and edges plus materialized pipeline findings. An authenticated server procedure authorizes the repository against the current user before persisting a plan, and a separate authenticated reviewer route returns only the selected user’s stored findings and evidence packets. Unauthenticated visitors remain on the public pipeline preview and cannot access saved evidence.
+
 ## References
 
 [1]: https://docs.stripe.com/changelog "Stripe Developer Changelog"

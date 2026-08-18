@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { index, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -59,5 +59,89 @@ export const riskFindings = mysqlTable("riskFindings", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+/**
+ * Append-only evidence nodes. Provider source data uses the public scope while
+ * repository facts and findings use the owning user's scope key.
+ */
+export const provenanceNodes = mysqlTable(
+  "provenanceNodes",
+  {
+    id: varchar("id", { length: 26 }).primaryKey(),
+    scopeKey: varchar("scopeKey", { length: 96 }).notNull(),
+    nodeKind: varchar("nodeKind", { length: 48 }).notNull(),
+    logicalKey: varchar("logicalKey", { length: 512 }).notNull(),
+    revisionKey: varchar("revisionKey", { length: 512 }).notNull(),
+    contentSha256: varchar("contentSha256", { length: 64 }),
+    payloadJson: text("payloadJson").notNull(),
+    sourceUrl: text("sourceUrl"),
+    observedAt: timestamp("observedAt").notNull(),
+    effectiveAt: timestamp("effectiveAt"),
+    parserVersion: varchar("parserVersion", { length: 64 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    uniqueIndex("provenance_node_revision_idx").on(table.scopeKey, table.nodeKind, table.logicalKey, table.revisionKey),
+    index("provenance_node_kind_idx").on(table.scopeKey, table.nodeKind),
+  ]
+);
+
+/**
+ * Typed graph edges preserve how every finding was derived from source, code,
+ * dependency, and analysis facts. The locator points to a small reproducible
+ * source fragment rather than storing complete documents or source trees.
+ */
+export const provenanceEdges = mysqlTable(
+  "provenanceEdges",
+  {
+    id: varchar("id", { length: 26 }).primaryKey(),
+    scopeKey: varchar("scopeKey", { length: 96 }).notNull(),
+    fromNodeId: varchar("fromNodeId", { length: 26 }).notNull(),
+    toNodeId: varchar("toNodeId", { length: 26 }).notNull(),
+    relationType: varchar("relationType", { length: 64 }).notNull(),
+    derivationMethod: varchar("derivationMethod", { length: 32 }).notNull(),
+    derivationVersion: varchar("derivationVersion", { length: 64 }).notNull(),
+    confidenceBasisPoints: int("confidenceBasisPoints"),
+    evidenceLocatorJson: text("evidenceLocatorJson").notNull(),
+    analysisRunId: varchar("analysisRunId", { length: 26 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("provenance_edge_from_idx").on(table.fromNodeId, table.relationType),
+    index("provenance_edge_to_idx").on(table.toNodeId, table.relationType),
+  ]
+);
+
+/**
+ * Materialized reviewer records. They are intentionally separate from the
+ * original riskFindings table while the live pipeline is introduced gradually.
+ */
+export const pipelineFindings = mysqlTable(
+  "pipelineFindings",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    repositoryId: int("repositoryId").notNull().references(() => repositories.id, { onDelete: "cascade" }),
+    externalId: varchar("externalId", { length: 128 }).notNull().unique(),
+    findingNodeId: varchar("findingNodeId", { length: 26 }).notNull(),
+    changeNodeId: varchar("changeNodeId", { length: 26 }).notNull(),
+    repositoryRevisionNodeId: varchar("repositoryRevisionNodeId", { length: 26 }).notNull(),
+    provider: varchar("provider", { length: 64 }).notNull(),
+    severity: mysqlEnum("severity", ["critical", "high", "medium", "low"]).notNull(),
+    status: mysqlEnum("status", ["needs_review", "triaged", "ignored", "resolved"]).default("needs_review").notNull(),
+    title: varchar("title", { length: 500 }).notNull(),
+    summary: text("summary").notNull(),
+    sourceUrl: text("sourceUrl").notNull(),
+    evidencePacketJson: text("evidencePacketJson").notNull(),
+    riskScore: int("riskScore").notNull(),
+    confidence: int("confidence").notNull(),
+    matcherVersion: varchar("matcherVersion", { length: 64 }).notNull(),
+    detectedAt: timestamp("detectedAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("pipeline_finding_repository_idx").on(table.repositoryId, table.riskScore)]
+);
+
 export type Repository = typeof repositories.$inferSelect;
 export type RiskFinding = typeof riskFindings.$inferSelect;
+export type ProvenanceNode = typeof provenanceNodes.$inferSelect;
+export type ProvenanceEdge = typeof provenanceEdges.$inferSelect;
+export type PipelineFinding = typeof pipelineFindings.$inferSelect;

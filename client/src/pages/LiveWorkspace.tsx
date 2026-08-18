@@ -1,0 +1,36 @@
+import { ArrowLeft, Database, ExternalLink, FileCode2, Loader2, ShieldAlert } from "lucide-react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
+
+type EvidencePacket = {
+  matcherVersion?: string;
+  change?: { source?: { contentSha256?: string } };
+  repository?: { commitSha?: string; codeEvidence?: Array<{ path?: string; startLine?: number }> };
+  scoreReasons?: string[];
+};
+
+function parseEvidencePacket(value: unknown): EvidencePacket | null {
+  return value && typeof value === "object" ? (value as EvidencePacket) : null;
+}
+
+export default function LiveWorkspace() {
+  const { isAuthenticated, loading } = useAuth({ redirectOnUnauthenticated: true });
+  const { data, isLoading, error } = trpc.sentinel.persistedPipelineWorkspace.useQuery(undefined, {
+    enabled: isAuthenticated,
+    retry: false,
+  });
+
+  if (loading || isLoading) {
+    return <div className="grid min-h-screen place-items-center bg-[#101629] text-[#d8deec]"><div className="flex items-center gap-3 font-mono-ui text-xs uppercase tracking-[.15em]"><Loader2 className="animate-spin text-[#f1c85b]" size={18} /> Loading saved evidence</div></div>;
+  }
+
+  if (error) {
+    return <div className="grid min-h-screen place-items-center bg-[#101629] px-5 text-[#d8deec]"><div className="max-w-md rounded-2xl border border-white/12 bg-[#171f38] p-7 text-center"><ShieldAlert className="mx-auto text-[#f1c85b]" size={28} /><h1 className="mt-4 text-2xl font-bold text-white">Saved evidence is unavailable</h1><p className="mt-3 text-sm leading-6 text-[#aeb8cf]">The reviewer workspace could not load your persisted findings. Your source code and provider configuration were not changed.</p><a href="/workspace" className="mt-6 inline-flex rounded-lg border border-white/12 px-4 py-3 text-sm font-semibold text-white hover:bg-white/8">Open pipeline preview</a></div></div>;
+  }
+
+  if (!data || data.mode === "empty") {
+    return <div className="grid min-h-screen place-items-center bg-[#101629] px-5 text-[#d8deec]"><div className="max-w-lg rounded-2xl border border-dashed border-white/15 bg-[#171f38] p-8 text-center"><Database className="mx-auto text-[#6ab8ff]" size={28} /><p className="mt-5 font-mono-ui text-[10px] uppercase tracking-[.14em] text-[#f1c85b]">No selected repository</p><h1 className="mt-3 text-2xl font-bold text-white">Connect a repository before saving evidence.</h1><p className="mt-3 text-sm leading-6 text-[#aeb8cf]">The public pipeline preview demonstrates the evidence chain. A selected GitHub repository is required before private findings can be written and reviewed here.</p><a href="/workspace" className="mt-6 inline-flex rounded-lg bg-[#f1c85b] px-4 py-3 text-sm font-bold text-[#11172a]">Open pipeline preview</a></div></div>;
+  }
+
+  return <div className="min-h-screen bg-[#101629] text-[#f7f8fc]"><header className="border-b border-white/10 bg-[#101629]/95"><div className="mx-auto flex h-[68px] max-w-[1180px] items-center gap-4 px-5 lg:px-8"><a href="/workspace" className="grid h-9 w-9 place-items-center rounded-lg border border-white/12 text-[#b8c0d5] hover:bg-white/8" aria-label="Back to pipeline preview"><ArrowLeft size={17} /></a><div><div className="font-mono-ui text-[10px] uppercase tracking-[.14em] text-[#f1c85b]">Authenticated reviewer workspace</div><h1 className="text-[15px] font-bold tracking-[-.025em]">Persisted evidence</h1></div></div></header><main className="mx-auto max-w-[1180px] px-5 py-8 lg:px-8"><section className="rounded-2xl border border-white/10 bg-[#171f38] p-6"><div className="flex items-center gap-2 font-mono-ui text-[10px] uppercase tracking-[.14em] text-[#f1c85b]"><Database size={14} /> Repository-scoped findings</div><h2 className="mt-3 text-3xl font-bold tracking-[-.05em]">Saved impact evidence for your connected repository.</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-[#b6c0d6]">Each record includes the provider source, the repository revision, AST-derived code evidence, and the matcher version that created it.</p></section><section className="mt-6 space-y-4">{data.findings.length === 0 ? <div className="rounded-xl border border-dashed border-white/15 p-7 text-sm text-[#aeb8cf]">No persisted findings yet. Run the authenticated pipeline procedure for one of your connected repositories.</div> : data.findings.map(finding => { const packet = parseEvidencePacket(finding.evidencePacket); return <article key={finding.id} className="rounded-2xl border border-white/10 bg-[#171f38] p-6"><div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap gap-2 font-mono-ui text-[10px] uppercase tracking-[.12em]"><span className="text-[#aeb8cf]">{finding.provider}</span><span className="rounded border border-white/10 px-1.5 py-0.5 text-[#8c99b6]">{finding.severity}</span><span className="rounded border border-[#6ab8ff]/30 px-1.5 py-0.5 text-[#8bc8ff]">{finding.confidence}% confidence</span></div><h2 className="mt-3 text-xl font-bold tracking-[-.03em] text-white">{finding.title}</h2><p className="mt-2 text-sm leading-6 text-[#aeb8cf]">{finding.summary}</p></div><a href={finding.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-semibold text-[#f1c85b] hover:text-[#f7d778]">Open source <ExternalLink size={13} /></a></div><div className="mt-5 grid gap-3 sm:grid-cols-3"><div className="rounded-lg border border-white/10 bg-[#101629] p-3"><div className="font-mono-ui text-[9px] uppercase tracking-[.1em] text-[#8592ae]">Repository commit</div><div className="mt-1 truncate font-mono-ui text-xs font-bold text-white">{packet?.repository?.commitSha ?? "Unavailable"}</div></div><div className="rounded-lg border border-white/10 bg-[#101629] p-3"><div className="font-mono-ui text-[9px] uppercase tracking-[.1em] text-[#8592ae]">Matcher</div><div className="mt-1 font-mono-ui text-xs font-bold text-white">{packet?.matcherVersion ?? "Unavailable"}</div></div><div className="rounded-lg border border-white/10 bg-[#101629] p-3"><div className="font-mono-ui text-[9px] uppercase tracking-[.1em] text-[#8592ae]">Risk score</div><div className="mt-1 text-lg font-bold text-white">{finding.riskScore}/100</div></div></div><div className="mt-5 grid gap-4 lg:grid-cols-2"><div><div className="font-mono-ui text-[9px] uppercase tracking-[.12em] text-[#8592ae]">Matched code</div><div className="mt-2 space-y-2">{packet?.repository?.codeEvidence?.map(evidence => <div key={`${evidence.path}:${evidence.startLine}`} className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#101629] px-3 py-2 font-mono-ui text-[10px] text-[#c6d0e4]"><FileCode2 size={13} className="text-[#6ab8ff]" />{evidence.path}:{evidence.startLine}</div>) ?? <div className="text-sm text-[#aeb8cf]">No code-location detail retained.</div>}</div></div><div><div className="font-mono-ui text-[9px] uppercase tracking-[.12em] text-[#8592ae]">Why Sentinel surfaced this</div><ul className="mt-2 space-y-1 text-xs leading-5 text-[#c6d0e4]">{packet?.scoreReasons?.map(reason => <li key={reason}>• {reason}</li>) ?? <li>Evidence explanation unavailable.</li>}</ul></div></div></article>; })}</section></main></div>;
+}

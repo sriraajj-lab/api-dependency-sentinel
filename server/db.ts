@@ -1,7 +1,9 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, repositories, riskFindings, users } from "../drizzle/schema";
+import { InsertUser, pipelineFindings, provenanceEdges, provenanceNodes, repositories, riskFindings, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import type { ProvenancePlan } from "./intelligence/provenance";
+import { calculateRiskScore } from "../shared/risk";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -99,4 +101,116 @@ export async function listRepositoryFindings(repositoryId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(riskFindings).where(eq(riskFindings.repositoryId, repositoryId)).orderBy(desc(riskFindings.riskScore));
+}
+
+export async function persistProvenancePlan(repositoryId: number, plan: ProvenancePlan) {
+  if (!Number.isInteger(repositoryId) || repositoryId < 1) {
+    throw new Error("A valid repository ID is required to persist a provenance plan.");
+  }
+
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database is not available for provenance persistence.");
+  }
+
+  try {
+    for (const node of plan.nodes) {
+      const existing = await db
+        .select({ id: provenanceNodes.id })
+        .from(provenanceNodes)
+        .where(
+          and(
+            eq(provenanceNodes.scopeKey, node.scopeKey),
+            eq(provenanceNodes.nodeKind, node.nodeKind),
+            eq(provenanceNodes.logicalKey, node.logicalKey),
+            eq(provenanceNodes.revisionKey, node.revisionKey)
+          )
+        )
+        .limit(1);
+      if (existing.length > 0) continue;
+
+      await db.insert(provenanceNodes).values({
+        id: node.id,
+        scopeKey: node.scopeKey,
+        nodeKind: node.nodeKind,
+        logicalKey: node.logicalKey,
+        revisionKey: node.revisionKey,
+        contentSha256: node.contentSha256 ?? null,
+        payloadJson: JSON.stringify(node.payload),
+        sourceUrl: node.sourceUrl ?? null,
+        observedAt: node.observedAt,
+        parserVersion: node.parserVersion ?? null,
+      });
+    }
+
+    for (const edge of plan.edges) {
+      const existing = await db.select({ id: provenanceEdges.id }).from(provenanceEdges).where(eq(provenanceEdges.id, edge.id)).limit(1);
+      if (existing.length > 0) continue;
+
+      await db.insert(provenanceEdges).values({
+        id: edge.id,
+        scopeKey: edge.scopeKey,
+        fromNodeId: edge.fromNodeId,
+        toNodeId: edge.toNodeId,
+        relationType: edge.relationType,
+        derivationMethod: edge.derivationMethod,
+        derivationVersion: edge.derivationVersion,
+        confidenceBasisPoints: edge.confidenceBasisPoints ?? null,
+        evidenceLocatorJson: JSON.stringify(edge.evidenceLocator),
+        analysisRunId: edge.analysisRunId ?? null,
+      });
+    }
+
+    const findingNode = plan.nodes.find(node => node.nodeKind === "impact_finding");
+    const changeNode = plan.nodes.find(node => node.nodeKind === "change_event");
+    const repositoryNode = plan.nodes.find(node => node.nodeKind === "repository_revision");
+    if (!findingNode || !changeNode || !repositoryNode) {
+      throw new Error("Provenance plan is missing a required finding, change, or repository revision node.");
+    }
+
+    const packet = plan.evidencePacket;
+    const externalId = `pipeline-${packet.findingId}`.slice(0, 128);
+    const riskScore = calculateRiskScore({
+      severity: packet.severity,
+      codeReferenceConfidence: packet.confidence,
+      executionSurface: packet.repository.codeEvidence.length,
+      daysUntilDeadline: undefined,
+    });
+    const existingFinding = await db.select({ id: pipelineFindings.id }).from(pipelineFindings).where(eq(pipelineFindings.externalId, externalId)).limit(1);
+    const findingValues = {
+      findingNodeId: findingNode.id,
+      changeNodeId: changeNode.id,
+      repositoryRevisionNodeId: repositoryNode.id,
+      provider: packet.change.provider,
+      severity: packet.severity,
+      title: packet.change.title,
+      summary: packet.change.summary,
+      sourceUrl: packet.change.source.sourceUrl,
+      evidencePacketJson: JSON.stringify(packet),
+      riskScore,
+      confidence: Math.round(packet.confidence * 100),
+      matcherVersion: packet.matcherVersion,
+    };
+
+    if (existingFinding.length > 0) {
+      await db.update(pipelineFindings).set(findingValues).where(eq(pipelineFindings.id, existingFinding[0].id));
+      return existingFinding[0].id;
+    }
+
+    const inserted = await db.insert(pipelineFindings).values({
+      externalId,
+      repositoryId,
+      ...findingValues,
+    });
+    return Number(inserted[0].insertId);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown provenance persistence error";
+    throw new Error(`Failed to persist provenance plan: ${message}`);
+  }
+}
+
+export async function listPipelineFindings(repositoryId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(pipelineFindings).where(eq(pipelineFindings.repositoryId, repositoryId)).orderBy(desc(pipelineFindings.riskScore));
 }

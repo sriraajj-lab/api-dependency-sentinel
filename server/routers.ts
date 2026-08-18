@@ -2,9 +2,11 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { listRepositoryFindings, listUserRepositories } from "./db";
+import { listPipelineFindings, listRepositoryFindings, listUserRepositories, persistProvenancePlan } from "./db";
 import { buildDemoRiskMap, supportedProviders } from "./sentinel";
+import { buildPipelinePreviewArtifact, buildPipelinePreviewRiskMap } from "./intelligence/pipelinePreview";
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -21,6 +23,7 @@ export const appRouter = router({
   }),
   sentinel: router({
     demoRiskMap: publicProcedure.query(() => buildDemoRiskMap()),
+    pipelinePreview: publicProcedure.query(() => buildPipelinePreviewRiskMap()),
     supportedProviders: publicProcedure.query(() => supportedProviders),
     workspace: protectedProcedure.query(async ({ ctx }) => {
       const repositories = await listUserRepositories(ctx.user.id);
@@ -30,6 +33,35 @@ export const appRouter = router({
       }
       const findings = await listRepositoryFindings(selectedRepository.id);
       return { mode: "connected" as const, repositories, findings };
+    }),
+    persistPipelinePreview: protectedProcedure
+      .input(z.object({ repositoryId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const repositories = await listUserRepositories(ctx.user.id);
+        const repository = repositories.find(item => item.id === input.repositoryId);
+        if (!repository) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Repository is not available to the current user." });
+        }
+        const artifact = buildPipelinePreviewArtifact();
+        const findingId = await persistProvenancePlan(input.repositoryId, artifact.plan);
+        return { findingId, evidencePacket: artifact.plan.evidencePacket };
+      }),
+    persistedPipelineWorkspace: protectedProcedure.query(async ({ ctx }) => {
+      const repositories = await listUserRepositories(ctx.user.id);
+      const selectedRepository = repositories[0];
+      if (!selectedRepository) return { mode: "empty" as const, repositories: [], findings: [] };
+      const findings = await listPipelineFindings(selectedRepository.id);
+      return {
+        mode: "connected" as const,
+        repositories,
+        findings: findings.map(finding => {
+          try {
+            return { ...finding, evidencePacket: JSON.parse(finding.evidencePacketJson) as unknown };
+          } catch {
+            return { ...finding, evidencePacket: null };
+          }
+        }),
+      };
     }),
     setDemoFindingStatus: publicProcedure
       .input(z.object({ id: z.string(), status: z.enum(["needs_review", "triaged", "ignored", "resolved"]) }))
