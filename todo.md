@@ -69,4 +69,8 @@
 - [x] Restore the missing workspace route and eliminate the frontend import failure.
 - [x] Validate the GitHub App private key through server-side App authentication.
 - [x] Run the full test suite and visually verify the landing and workspace experiences.
-- [ ] Save a new product checkpoint and deliver the validated MVP and launch handoff.
+- [x] Save a new product checkpoint and deliver the validated MVP and launch handoff.
+- [x] Verify the published Sentinel endpoint and document the canonical production URL.
+- [x] Replace the GitHub App homepage with the published product URL.
+- [ ] Implement and validate the signed GitHub webhook callback before enabling live events.
+- [ ] Install the GitHub App on a dedicated test repository with read-only repository contents.

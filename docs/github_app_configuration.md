@@ -7,7 +7,7 @@
 | App name | API Dependency Sentinel |
 | App ID | 4627952 |
 | Description | Detect upstream API changes, map likely impact in connected repositories, and prepare source-backed remediation work for owner review. |
-| Homepage | The project’s current preview URL; replace with the published product URL before Marketplace submission. |
+| Homepage | https://venturesig-e4ipjaps.manus.space |
 
 ## Minimum-permission policy
 
@@ -34,12 +34,12 @@ The App ID, client ID, client secret, and private key have been created and stor
 
 ## Current configuration state
 
-The GitHub App was created under the product owner’s account with its temporary project homepage. Repository Contents is configured as **Read-only** and Metadata remains GitHub’s mandatory baseline. All other optional repository, organization, and account permissions remain at **No access**.
+The product is published at **https://venturesig-e4ipjaps.manus.space**. The GitHub App’s homepage has been updated from the temporary preview to this canonical production URL. Repository Contents is configured as **Read-only** and Metadata remains GitHub’s mandatory baseline. All other optional repository, organization, and account permissions remain at **No access**.
 
-Webhooks remain disabled until the published product has a signature-verifying endpoint and a managed webhook secret. The product currently exposes a clearly labelled demo workspace; it does not write to customer repositories or create GitHub issues.
+The GitHub App webhook is configured with the HTTPS endpoint `https://venturesig-e4ipjaps.manus.space/api/github/webhook`, a managed high-entropy secret, and SSL certificate verification enabled. The production server handler verifies `X-Hub-Signature-256` before accepting an event; it must be deployed before event subscriptions are enabled. The product does not write to customer repositories or create GitHub issues.
 
 ## Production activation prerequisites
 
-Before enabling live installations, replace the preview homepage with the published URL, implement and verify the signed webhook callback, add a managed webhook secret, subscribe only to installation, installation-repositories, and push events, and install the App on a dedicated test repository. Keep Issues at No access until an explicit reviewed-issue action has been implemented and approved.
+Before enabling live installations, deploy and verify the signed webhook callback, subscribe only to installation, installation-repositories, and push events, and install the App on a dedicated test repository. Keep Issues at No access until an explicit reviewed-issue action has been implemented and approved.
 
 The registration review specifically verified that Repository Contents—not an adjacent Copilot setting—was set to Read-only before creation.
