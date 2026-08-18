@@ -8,6 +8,8 @@ The initial six-hour cadence deliberately favours reliable, low-noise change cap
 
 The deployed project now has a single enabled project-level job named `stripe-revision-poll-primary` targeting `/api/scheduled/stripe-poll` on the six-hour UTC cadence. Its platform task identifier is stored only in the durable provider cursor state, which the callback checks before it accepts a cron delivery.
 
+The first production delivery exposed that Stripe no longer publishes the schema under `latest/spec3.json`. The adapter now resolves the current repository commit and acquires the canonical commit-pinned `openapi/spec3.json` document. A controlled recovery delivery returned HTTP 200 with a `changed` result, followed by an HTTP 200 `unchanged` confirmation; both preserved the six-hour schedule and wrote compact audit rows.
+
 ## Safety and idempotency contract
 
 | Concern | Required behaviour |
@@ -34,5 +36,6 @@ The implementation is complete only when the following are true:
 
 | Provider | Primary source | Adapter evidence strategy |
 |---|---|---|
+| Stripe | [Official OpenAPI repository](https://github.com/stripe/openapi) | Resolve the current `master` commit through GitHub, then acquire the immutable `openapi/spec3.json` document at that SHA. Preserve the response ETag, commit SHA, and content hash; derive operation and request-requiredness differences using schema pointers. |
 | OpenAI | [Official API changelog](https://developers.openai.com/api/docs/changelog) | Snapshot the official dated changelog document, retain its content hash, and normalize entries with their month/date heading and named API model, endpoint, or SDK surface as a document-excerpt locator. The official page has a dedicated changelog heading and month-level dated sections. |
 | Twilio | [Official OpenAPI repository](https://github.com/twilio/twilio-oai) and [product changelog](https://www.twilio.com/en-us/changelog) | Prefer versioned OpenAPI documents for operation-level differences; use official changelog excerpts only when a structured surface is not available. The official repository exposes a `spec` directory, Git commit history, tags, and a `CHANGES.md` record, enabling an adapter to record both a document path and immutable commit reference. |

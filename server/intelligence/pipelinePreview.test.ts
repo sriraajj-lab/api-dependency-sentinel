@@ -10,6 +10,7 @@ describe("Pipeline preview", () => {
     expect(finding).toMatchObject({
       provider: "Stripe",
       type: "Schema change",
+      sourceUrl: "https://github.com/stripe/openapi/blob/master/openapi/spec3.json",
       sourcePointer: expect.stringContaining("payment_intents"),
       evidence: expect.objectContaining({ matcherVersion: "ts-direct-v1", provenanceNodeCount: expect.any(Number) }),
     });

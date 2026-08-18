@@ -10,7 +10,7 @@ function snapshot(ref: string, document: unknown): SourceSnapshot {
   return {
     provider: "stripe",
     sourceKind: "openapi",
-    sourceUrl: "https://github.com/stripe/openapi/blob/master/latest/spec3.json",
+    sourceUrl: "https://github.com/stripe/openapi/blob/master/openapi/spec3.json",
     sourceRef: ref,
     retrievedAt: "2026-08-18T00:00:00.000Z",
     contentSha256: `fixture-${ref}`,
