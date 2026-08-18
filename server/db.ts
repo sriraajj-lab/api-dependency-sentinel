@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, pipelineFindings, provenanceEdges, provenanceNodes, repositories, riskFindings, users } from "../drizzle/schema";
+import { InsertUser, pipelineFindings, providerPollRuns, providerPollStates, provenanceEdges, provenanceNodes, repositories, repositoryScanRuns, riskFindings, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 import type { ProvenancePlan } from "./intelligence/provenance";
 import { calculateRiskScore } from "../shared/risk";
@@ -213,4 +213,111 @@ export async function listPipelineFindings(repositoryId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(pipelineFindings).where(eq(pipelineFindings.repositoryId, repositoryId)).orderBy(desc(pipelineFindings.riskScore));
+}
+
+export async function getProviderPollState(provider: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(providerPollStates).where(eq(providerPollStates.provider, provider)).limit(1);
+  return result[0];
+}
+
+export async function getProviderPollStateByTaskUid(taskUid: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(providerPollStates).where(eq(providerPollStates.scheduleCronTaskUid, taskUid)).limit(1);
+  return result[0];
+}
+
+export async function upsertProviderPollState(input: {
+  provider: string;
+  sourceUrl: string;
+  scheduleCronTaskUid?: string | null;
+  etag?: string | null;
+  commitSha?: string | null;
+  contentSha256?: string | null;
+  lastAttemptAt?: Date | null;
+  lastSuccessAt?: Date | null;
+  lastStatus?: "idle" | "unchanged" | "changed" | "failed";
+  lastError?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for provider polling state.");
+  await db.insert(providerPollStates).values({
+    provider: input.provider,
+    sourceUrl: input.sourceUrl,
+    scheduleCronTaskUid: input.scheduleCronTaskUid ?? null,
+    etag: input.etag ?? null,
+    commitSha: input.commitSha ?? null,
+    contentSha256: input.contentSha256 ?? null,
+    lastAttemptAt: input.lastAttemptAt ?? null,
+    lastSuccessAt: input.lastSuccessAt ?? null,
+    lastStatus: input.lastStatus ?? "idle",
+    lastError: input.lastError ?? null,
+  }).onDuplicateKeyUpdate({
+    set: {
+      sourceUrl: input.sourceUrl,
+      scheduleCronTaskUid: input.scheduleCronTaskUid ?? null,
+      etag: input.etag ?? null,
+      commitSha: input.commitSha ?? null,
+      contentSha256: input.contentSha256 ?? null,
+      lastAttemptAt: input.lastAttemptAt ?? null,
+      lastSuccessAt: input.lastSuccessAt ?? null,
+      lastStatus: input.lastStatus ?? "idle",
+      lastError: input.lastError ?? null,
+    },
+  });
+}
+
+export async function recordProviderPollRun(input: {
+  provider: string;
+  priorCommitSha?: string | null;
+  nextCommitSha?: string | null;
+  etag?: string | null;
+  contentSha256?: string | null;
+  outcome: "unchanged" | "changed" | "failed";
+  changeCount?: number;
+  errorSummary?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for provider poll auditing.");
+  await db.insert(providerPollRuns).values({
+    ...input,
+    priorCommitSha: input.priorCommitSha ?? null,
+    nextCommitSha: input.nextCommitSha ?? null,
+    etag: input.etag ?? null,
+    contentSha256: input.contentSha256 ?? null,
+    changeCount: input.changeCount ?? 0,
+    errorSummary: input.errorSummary?.slice(0, 1000) ?? null,
+  });
+}
+
+export async function getRepositoryForUser(repositoryId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(repositories).where(and(eq(repositories.id, repositoryId), eq(repositories.userId, userId))).limit(1);
+  return result[0];
+}
+
+export async function recordRepositoryScanRun(input: {
+  repositoryId: number;
+  commitSha: string;
+  status: "succeeded" | "failed";
+  fileCount?: number;
+  dependencyCount?: number;
+  codeEvidenceCount?: number;
+  errorSummary?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for repository scan auditing.");
+  await db.insert(repositoryScanRuns).values({
+    ...input,
+    fileCount: input.fileCount ?? 0,
+    dependencyCount: input.dependencyCount ?? 0,
+    codeEvidenceCount: input.codeEvidenceCount ?? 0,
+    errorSummary: input.errorSummary?.slice(0, 1000) ?? null,
+  });
+  if (input.status === "succeeded") {
+    await db.update(repositories).set({ lastScannedAt: new Date() }).where(eq(repositories.id, input.repositoryId));
+  }
 }

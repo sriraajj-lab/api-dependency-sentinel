@@ -140,8 +140,74 @@ export const pipelineFindings = mysqlTable(
   table => [index("pipeline_finding_repository_idx").on(table.repositoryId, table.riskScore)]
 );
 
+/**
+ * One durable cursor per monitored public provider source. The prior source body
+ * is intentionally not retained: a changed Stripe revision is diffed by fetching
+ * the prior committed revision from the provider's public source repository.
+ */
+export const providerPollStates = mysqlTable("providerPollStates", {
+  provider: varchar("provider", { length: 64 }).primaryKey(),
+  sourceUrl: text("sourceUrl").notNull(),
+  scheduleCronTaskUid: varchar("scheduleCronTaskUid", { length: 65 }),
+  etag: varchar("etag", { length: 512 }),
+  commitSha: varchar("commitSha", { length: 128 }),
+  contentSha256: varchar("contentSha256", { length: 64 }),
+  lastAttemptAt: timestamp("lastAttemptAt"),
+  lastSuccessAt: timestamp("lastSuccessAt"),
+  lastStatus: mysqlEnum("lastStatus", ["idle", "unchanged", "changed", "failed"]).default("idle").notNull(),
+  lastError: text("lastError"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/**
+ * Compact immutable attempt records provide operational traceability without
+ * duplicating provider documents. The content hash and revisions are sufficient
+ * to reproduce a diff from public provider source history.
+ */
+export const providerPollRuns = mysqlTable(
+  "providerPollRuns",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    provider: varchar("provider", { length: 64 }).notNull(),
+    priorCommitSha: varchar("priorCommitSha", { length: 128 }),
+    nextCommitSha: varchar("nextCommitSha", { length: 128 }),
+    etag: varchar("etag", { length: 512 }),
+    contentSha256: varchar("contentSha256", { length: 64 }),
+    outcome: mysqlEnum("outcome", ["unchanged", "changed", "failed"]).notNull(),
+    changeCount: int("changeCount").default(0).notNull(),
+    errorSummary: varchar("errorSummary", { length: 1000 }),
+    executedAt: timestamp("executedAt").defaultNow().notNull(),
+  },
+  table => [index("provider_poll_run_provider_idx").on(table.provider, table.executedAt)]
+);
+
+/**
+ * Repository scan metadata records the exact revision and bounded extraction
+ * counts. Code facts remain in provenance; complete source file contents do not
+ * enter the database.
+ */
+export const repositoryScanRuns = mysqlTable(
+  "repositoryScanRuns",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    repositoryId: int("repositoryId").notNull().references(() => repositories.id, { onDelete: "cascade" }),
+    commitSha: varchar("commitSha", { length: 128 }).notNull(),
+    status: mysqlEnum("status", ["succeeded", "failed"]).notNull(),
+    fileCount: int("fileCount").default(0).notNull(),
+    dependencyCount: int("dependencyCount").default(0).notNull(),
+    codeEvidenceCount: int("codeEvidenceCount").default(0).notNull(),
+    errorSummary: varchar("errorSummary", { length: 1000 }),
+    scannedAt: timestamp("scannedAt").defaultNow().notNull(),
+  },
+  table => [index("repository_scan_repository_idx").on(table.repositoryId, table.scannedAt)]
+);
+
 export type Repository = typeof repositories.$inferSelect;
 export type RiskFinding = typeof riskFindings.$inferSelect;
 export type ProvenanceNode = typeof provenanceNodes.$inferSelect;
 export type ProvenanceEdge = typeof provenanceEdges.$inferSelect;
 export type PipelineFinding = typeof pipelineFindings.$inferSelect;
+export type ProviderPollState = typeof providerPollStates.$inferSelect;
+export type ProviderPollRun = typeof providerPollRuns.$inferSelect;
+export type RepositoryScanRun = typeof repositoryScanRuns.$inferSelect;
