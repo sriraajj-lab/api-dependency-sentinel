@@ -58,7 +58,7 @@
 - [x] Prepare launch positioning, product-led acquisition assets, sales scripts, and design-partner outreach.
 - [x] Verify core user journeys, capture final visual review feedback, and refine the MVP.
 - [x] Add a recoverable risk-map query error state after final visual and runtime review.
-- [ ] Save and deliver the completed product and go-to-market materials.
+- [x] Save and deliver the completed product and go-to-market materials.
 
 # GitHub Connection Prerequisites
 
