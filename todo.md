@@ -77,3 +77,4 @@
 - [x] Install the GitHub App on a dedicated test repository with read-only repository contents.
 - [x] Create the private api-dependency-sentinel-test repository with a synthetic integration fixture.
 - [x] Confirm the test installation emits and accepts a signed GitHub delivery without accessing an existing customer project.
+- [x] Produce an implementation-ready architecture brief for provider adapters, the provenance graph, and a TypeScript/Node change-to-code matcher.
