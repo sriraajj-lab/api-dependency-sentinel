@@ -2,13 +2,16 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { getActiveGitHubConnectSession, getLatestChangedProviderPollRun, getRepositoryForUser, getRepositoryOperationalStatus, listPipelineFindings, listRepositoryFindings, listUserRepositories, persistProvenancePlan, recordRepositoryScanRun, upsertConnectedRepository } from "./db";
+import { getActiveGitHubConnectSession, getLatestChangedProviderPollRun, getRepositoryForUser, getRepositoryOperationalStatus, listLatestProviderSourceSnapshots, listPipelineFindings, listRepositoryFindings, listUserRepositories, persistProvenancePlan, recordRepositoryScanRun, upsertConnectedRepository } from "./db";
 import { buildDemoRiskMap, supportedProviders } from "./sentinel";
 import { buildPipelinePreviewArtifact, buildPipelinePreviewRiskMap } from "./intelligence/pipelinePreview";
 import { scanInstalledTypeScriptRepository } from "./intelligence/githubRepositoryScanner";
 import { matchChangeToRepository } from "./intelligence/impactMatcher";
 import { buildProvenancePlan } from "./intelligence/provenance";
+import { diffOpenAiChangelog } from "./intelligence/openaiAdapter";
+import { diffStripeOpenApi, fetchStripeOpenApi } from "./intelligence/stripeAdapter";
 import { diffTwilioOpenApi, fetchTwilioOpenApi } from "./intelligence/twilioAdapter";
+import type { SourceSnapshot, SupportedProvider } from "../shared/intelligence";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -137,22 +140,49 @@ export const appRouter = router({
             .map(poll => ({ provider: poll.provider, lastStatus: poll.lastStatus, lastSuccessAt: poll.lastSuccessAt }));
           const changedProviders = monitoredProviders.filter(provider => provider.lastStatus === "changed").map(provider => provider.provider);
           const persistedFindingIds: number[] = [];
-          let matchingNote: string | undefined;
-          const hasTwilioDependency = installedPackages.has("twilio");
-          const latestTwilioChange = hasTwilioDependency ? await getLatestChangedProviderPollRun("twilio") : undefined;
-          if (latestTwilioChange?.priorCommitSha && latestTwilioChange.nextCommitSha && latestTwilioChange.priorCommitSha !== latestTwilioChange.nextCommitSha) {
+          const matchingNotes: string[] = [];
+          const supportedChangedProviders = changedProviders.filter((provider): provider is SupportedProvider =>
+            provider === "stripe" || provider === "openai" || provider === "twilio"
+          );
+          for (const provider of supportedChangedProviders) {
             try {
-              const [prior, next] = await Promise.all([
-                fetchTwilioOpenApi(latestTwilioChange.priorCommitSha),
-                fetchTwilioOpenApi(latestTwilioChange.nextCommitSha),
-              ]);
-              for (const change of diffTwilioOpenApi(prior, next)) {
+              let changes;
+              if (provider === "openai") {
+                const snapshots = await listLatestProviderSourceSnapshots(provider, 2);
+                if (snapshots.length < 2) {
+                  matchingNotes.push(`${provider} has a changed state but needs one more retained source revision before deterministic historical matching can begin.`);
+                  continue;
+                }
+                const [nextRow, priorRow] = snapshots;
+                const toSnapshot = (row: typeof nextRow): SourceSnapshot => ({
+                  provider,
+                  sourceKind: row.sourceKind as SourceSnapshot["sourceKind"],
+                  sourceUrl: row.sourceUrl,
+                  sourceRef: row.sourceRef,
+                  contentSha256: row.contentSha256,
+                  contentType: row.contentType,
+                  body: row.body,
+                  retrievedAt: row.retrievedAt.toISOString(),
+                });
+                changes = diffOpenAiChangelog(toSnapshot(priorRow), toSnapshot(nextRow));
+              } else {
+                const revision = await getLatestChangedProviderPollRun(provider);
+                if (!revision?.priorCommitSha || !revision.nextCommitSha || revision.priorCommitSha === revision.nextCommitSha) {
+                  matchingNotes.push(`${provider} has no distinct immutable source revisions available for historical matching yet.`);
+                  continue;
+                }
+                const [prior, next] = provider === "stripe"
+                  ? await Promise.all([fetchStripeOpenApi(revision.priorCommitSha), fetchStripeOpenApi(revision.nextCommitSha)])
+                  : await Promise.all([fetchTwilioOpenApi(revision.priorCommitSha), fetchTwilioOpenApi(revision.nextCommitSha)]);
+                changes = provider === "stripe" ? diffStripeOpenApi(prior, next) : diffTwilioOpenApi(prior, next);
+              }
+              for (const change of changes) {
                 const candidate = matchChangeToRepository(change, scan.evidence);
                 if (!candidate) continue;
-                persistedFindingIds.push(await persistProvenancePlan(repository.id, buildProvenancePlan(candidate, "twilio-commit-diff-v1")));
+                persistedFindingIds.push(await persistProvenancePlan(repository.id, buildProvenancePlan(candidate, `${provider}-retained-source-diff-v1`)));
               }
             } catch (error) {
-              matchingNote = error instanceof Error ? error.message : "Historical Twilio revision matching was unavailable.";
+              matchingNotes.push(error instanceof Error ? `${provider}: ${error.message}` : `${provider}: source-backed matching was unavailable.`);
             }
           }
           return {
@@ -160,7 +190,7 @@ export const appRouter = router({
             monitoredProviders,
             changedProviders,
             findingsCreated: persistedFindingIds.length,
-            matchingNote,
+            matchingNote: matchingNotes.length > 0 ? matchingNotes.join(" ") : undefined,
             nextStep: persistedFindingIds.length > 0
               ? `${persistedFindingIds.length} source-backed impact finding${persistedFindingIds.length === 1 ? "" : "s"} was refreshed for reviewer review.`
               : changedProviders.length > 0

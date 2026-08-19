@@ -197,6 +197,32 @@ export const providerPollRuns = mysqlTable(
 );
 
 /**
+ * Compact retained provider-source bodies are used only for providers such as
+ * OpenAI whose public changelog has no immutable history. Large OpenAPI files
+ * are reproducibly retrieved by immutable public commit instead. Repository
+ * source code is never retained in this table.
+ */
+export const providerSourceSnapshots = mysqlTable(
+  "providerSourceSnapshots",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    provider: varchar("provider", { length: 64 }).notNull(),
+    sourceKind: varchar("sourceKind", { length: 64 }).notNull(),
+    sourceUrl: text("sourceUrl").notNull(),
+    sourceRef: varchar("sourceRef", { length: 128 }).notNull(),
+    contentSha256: varchar("contentSha256", { length: 64 }).notNull(),
+    contentType: varchar("contentType", { length: 255 }).notNull(),
+    body: text("body").notNull(),
+    retrievedAt: timestamp("retrievedAt").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    uniqueIndex("provider_snapshot_revision_idx").on(table.provider, table.contentSha256),
+    index("provider_snapshot_lookup_idx").on(table.provider, table.retrievedAt),
+  ]
+);
+
+/**
  * Repository scan metadata records the exact revision and bounded extraction
  * counts. Code facts remain in provenance; complete source file contents do not
  * enter the database.
@@ -224,4 +250,5 @@ export type ProvenanceEdge = typeof provenanceEdges.$inferSelect;
 export type PipelineFinding = typeof pipelineFindings.$inferSelect;
 export type ProviderPollState = typeof providerPollStates.$inferSelect;
 export type ProviderPollRun = typeof providerPollRuns.$inferSelect;
+export type ProviderSourceSnapshot = typeof providerSourceSnapshots.$inferSelect;
 export type RepositoryScanRun = typeof repositoryScanRuns.$inferSelect;

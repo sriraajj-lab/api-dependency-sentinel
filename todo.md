@@ -106,9 +106,16 @@
 - [x] Revalidate the live OAuth portal after a normal Manus browser session is available; the current external authorization surface remains blank despite the product route and OAuth handoff tests passing. Superseded by the validated GitHub-first flow.
 - [x] Replace the unavailable external Manus sign-in handoff with a GitHub-first, server-issued session that permits only verified read-only repository onboarding.
 - [x] Add a repository-status card showing the connected repository, last scan timestamp, and Stripe, OpenAI, and Twilio poll timestamps.
-- [ ] Enable a one-click authenticated pipeline scan immediately after a verified repository connection, with clear in-progress, success, and failure states.
+- [x] Enable a one-click authenticated pipeline scan immediately after a verified repository connection, with clear in-progress, success, and failure states.
 - [ ] Validate the new repository-status and one-click scan experience with automated coverage and production browser verification.
-- [ ] Implement a one-click protected full pipeline action that scans the selected repository and refreshes persisted review findings, not only scan metadata.
+- [x] Implement a one-click protected full pipeline action that scans the selected repository and refreshes persisted review findings, not only scan metadata.
 - [ ] Add success, failure, and post-run finding-refresh tests for the full one-click pipeline action, then confirm it in the production workspace.
 - [ ] Persist source-backed impact findings from actual changed provider revisions when the one-click pipeline detects deterministic code matches.
-- [ ] Present the ten prepared design-partner outreach drafts for user review and collect explicit per-batch send approval before external delivery.
+- [x] Present the ten prepared design-partner outreach drafts for user review and collect explicit per-batch send approval before external delivery.
+- [x] Build an investor-ready business thesis covering the customer pain, market wedge, defensibility, pricing, and milestone-based funding case.
+- [x] Create a concise live product demo script and investor collateral anchored in the validated repository connection, polling, and source-backed matching workflow.
+- [x] Prepare an investor-application answer bank, including founder narrative placeholders, company stage, traction evidence, and funding-use milestones.
+- [ ] Verify current public contact details and preferred channels for the approved ten-draft design-partner batch before asking for individual-send approval.
+- [x] Extend one-click source-backed finding generation to all supported changed providers, including Stripe and OpenAI, using immutable revisions for OpenAPI providers and retained changelog revisions for OpenAI.
+- [ ] Prove in automated and production validation that a full analysis run creates or refreshes persisted findings when deterministic source-backed matches exist and updates the reviewer workspace list.
+- [ ] Replace or complete the held outreach prospects so all ten approved drafts have a verified current public business channel before individual-send approval.

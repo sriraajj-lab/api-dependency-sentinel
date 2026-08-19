@@ -1,5 +1,5 @@
 import type { ProviderChange } from "../../shared/intelligence";
-import { getProviderPollState, recordProviderPollRun, upsertProviderPollState } from "../db";
+import { getProviderPollState, recordProviderPollRun, saveProviderSourceSnapshot, upsertProviderPollState } from "../db";
 import { fetchOpenAiChangelogConditional, normalizeOpenAiChangelog, type OpenAiSourceCursor } from "./openaiAdapter";
 
 const OPENAI_SOURCE_URL = "https://developers.openai.com/api/docs/changelog";
@@ -25,6 +25,7 @@ export async function pollOpenAiRevision(fetchImpl: typeof fetch = fetch): Promi
       return { provider: "openai", outcome: "unchanged", priorCommitSha: state?.commitSha ?? undefined, nextCommitSha: current.cursor.sourceRef, changeCount: 0, changes: [] };
     }
     const changes = normalizeOpenAiChangelog(current.snapshot);
+    await saveProviderSourceSnapshot(current.snapshot);
     await upsertProviderPollState({ provider: "openai", sourceUrl: current.snapshot.sourceUrl, scheduleCronTaskUid: state?.scheduleCronTaskUid, etag: current.cursor.etag, commitSha: current.cursor.sourceRef, contentSha256: current.cursor.contentSha256, lastAttemptAt: now, lastSuccessAt: now, lastStatus: "changed", lastError: null });
     await recordProviderPollRun({ provider: "openai", priorCommitSha: state?.commitSha, nextCommitSha: current.cursor.sourceRef, etag: current.cursor.etag, contentSha256: current.cursor.contentSha256, outcome: "changed", changeCount: changes.length });
     return { provider: "openai", outcome: "changed", priorCommitSha: state?.commitSha ?? undefined, nextCommitSha: current.cursor.sourceRef, changeCount: changes.length, changes };

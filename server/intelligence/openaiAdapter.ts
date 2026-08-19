@@ -123,3 +123,13 @@ export function normalizeOpenAiChangelog(snapshot: SourceSnapshot): ProviderChan
   }
   return changes;
 }
+
+function changelogFingerprint(change: ProviderChange) {
+  return [change.title, change.sourceLocator.pointer ?? "", change.sourceLocator.excerpt ?? ""].join("|");
+}
+
+export function diffOpenAiChangelog(prior: SourceSnapshot, next: SourceSnapshot): ProviderChange[] {
+  if (prior.provider !== "openai" || next.provider !== "openai") throw new Error("OpenAI changelog diffs require OpenAI snapshots.");
+  const priorFingerprints = new Set(normalizeOpenAiChangelog(prior).map(changelogFingerprint));
+  return normalizeOpenAiChangelog(next).filter(change => !priorFingerprints.has(changelogFingerprint(change)));
+}

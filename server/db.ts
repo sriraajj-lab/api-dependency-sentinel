@@ -1,8 +1,9 @@
 import { and, desc, eq, gt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { githubConnectSessions, InsertUser, pipelineFindings, providerPollRuns, providerPollStates, provenanceEdges, provenanceNodes, repositories, repositoryScanRuns, riskFindings, users } from "../drizzle/schema";
+import { githubConnectSessions, InsertUser, pipelineFindings, providerPollRuns, providerPollStates, providerSourceSnapshots, provenanceEdges, provenanceNodes, repositories, repositoryScanRuns, riskFindings, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 import type { ProvenancePlan } from "./intelligence/provenance";
+import type { SourceSnapshot } from "../shared/intelligence";
 import { calculateRiskScore } from "../shared/risk";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -288,6 +289,31 @@ export async function getLatestChangedProviderPollRun(provider: string) {
     .where(and(eq(providerPollRuns.provider, provider), eq(providerPollRuns.outcome, "changed")))
     .orderBy(desc(providerPollRuns.executedAt)).limit(1);
   return result[0];
+}
+
+export async function saveProviderSourceSnapshot(snapshot: SourceSnapshot) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for provider source retention.");
+  const retrievedAt = new Date(snapshot.retrievedAt);
+  await db.insert(providerSourceSnapshots).values({
+    provider: snapshot.provider,
+    sourceKind: snapshot.sourceKind,
+    sourceUrl: snapshot.sourceUrl,
+    sourceRef: snapshot.sourceRef,
+    contentSha256: snapshot.contentSha256,
+    contentType: snapshot.contentType,
+    body: snapshot.body,
+    retrievedAt,
+  }).onDuplicateKeyUpdate({ set: { retrievedAt } });
+}
+
+export async function listLatestProviderSourceSnapshots(provider: string, limit = 2) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(providerSourceSnapshots)
+    .where(eq(providerSourceSnapshots.provider, provider))
+    .orderBy(desc(providerSourceSnapshots.retrievedAt))
+    .limit(limit);
 }
 
 export async function upsertProviderPollState(input: {
