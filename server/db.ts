@@ -281,6 +281,15 @@ export async function getProviderPollStateByTaskUid(taskUid: string) {
   return result[0];
 }
 
+export async function getLatestChangedProviderPollRun(provider: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(providerPollRuns)
+    .where(and(eq(providerPollRuns.provider, provider), eq(providerPollRuns.outcome, "changed")))
+    .orderBy(desc(providerPollRuns.executedAt)).limit(1);
+  return result[0];
+}
+
 export async function upsertProviderPollState(input: {
   provider: string;
   sourceUrl: string;

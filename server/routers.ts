@@ -2,10 +2,13 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { getActiveGitHubConnectSession, getRepositoryForUser, getRepositoryOperationalStatus, listPipelineFindings, listRepositoryFindings, listUserRepositories, persistProvenancePlan, recordRepositoryScanRun, upsertConnectedRepository } from "./db";
+import { getActiveGitHubConnectSession, getLatestChangedProviderPollRun, getRepositoryForUser, getRepositoryOperationalStatus, listPipelineFindings, listRepositoryFindings, listUserRepositories, persistProvenancePlan, recordRepositoryScanRun, upsertConnectedRepository } from "./db";
 import { buildDemoRiskMap, supportedProviders } from "./sentinel";
 import { buildPipelinePreviewArtifact, buildPipelinePreviewRiskMap } from "./intelligence/pipelinePreview";
 import { scanInstalledTypeScriptRepository } from "./intelligence/githubRepositoryScanner";
+import { matchChangeToRepository } from "./intelligence/impactMatcher";
+import { buildProvenancePlan } from "./intelligence/provenance";
+import { diffTwilioOpenApi, fetchTwilioOpenApi } from "./intelligence/twilioAdapter";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -133,14 +136,36 @@ export const appRouter = router({
             .filter(poll => installedPackages.has(poll.provider.toLowerCase()))
             .map(poll => ({ provider: poll.provider, lastStatus: poll.lastStatus, lastSuccessAt: poll.lastSuccessAt }));
           const changedProviders = monitoredProviders.filter(provider => provider.lastStatus === "changed").map(provider => provider.provider);
+          const persistedFindingIds: number[] = [];
+          let matchingNote: string | undefined;
+          const hasTwilioDependency = installedPackages.has("twilio");
+          const latestTwilioChange = hasTwilioDependency ? await getLatestChangedProviderPollRun("twilio") : undefined;
+          if (latestTwilioChange?.priorCommitSha && latestTwilioChange.nextCommitSha && latestTwilioChange.priorCommitSha !== latestTwilioChange.nextCommitSha) {
+            try {
+              const [prior, next] = await Promise.all([
+                fetchTwilioOpenApi(latestTwilioChange.priorCommitSha),
+                fetchTwilioOpenApi(latestTwilioChange.nextCommitSha),
+              ]);
+              for (const change of diffTwilioOpenApi(prior, next)) {
+                const candidate = matchChangeToRepository(change, scan.evidence);
+                if (!candidate) continue;
+                persistedFindingIds.push(await persistProvenancePlan(repository.id, buildProvenancePlan(candidate, "twilio-commit-diff-v1")));
+              }
+            } catch (error) {
+              matchingNote = error instanceof Error ? error.message : "Historical Twilio revision matching was unavailable.";
+            }
+          }
           return {
             scan,
             monitoredProviders,
             changedProviders,
-            findingsCreated: 0,
-            nextStep: changedProviders.length > 0
-              ? "Provider change state is available for reviewer matching; no source-backed impact finding was fabricated during this scan."
-              : "Repository evidence and current provider state are synchronized; no new provider change is ready for matching.",
+            findingsCreated: persistedFindingIds.length,
+            matchingNote,
+            nextStep: persistedFindingIds.length > 0
+              ? `${persistedFindingIds.length} source-backed impact finding${persistedFindingIds.length === 1 ? "" : "s"} was refreshed for reviewer review.`
+              : changedProviders.length > 0
+                ? "Provider change state is available for reviewer matching; no source-backed impact finding was fabricated during this run."
+                : "Repository evidence and current provider state are synchronized; no new provider change is ready for matching.",
           };
         } catch (error) {
           const message = error instanceof Error ? error.message : "Unknown GitHub repository scan failure";

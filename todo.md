@@ -110,4 +110,5 @@
 - [ ] Validate the new repository-status and one-click scan experience with automated coverage and production browser verification.
 - [ ] Implement a one-click protected full pipeline action that scans the selected repository and refreshes persisted review findings, not only scan metadata.
 - [ ] Add success, failure, and post-run finding-refresh tests for the full one-click pipeline action, then confirm it in the production workspace.
+- [ ] Persist source-backed impact findings from actual changed provider revisions when the one-click pipeline detects deterministic code matches.
 - [ ] Present the ten prepared design-partner outreach drafts for user review and collect explicit per-batch send approval before external delivery.
