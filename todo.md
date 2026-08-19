@@ -122,4 +122,5 @@
 - [ ] Monitor the next genuine Stripe, OpenAI, or Twilio provider revision and complete the live proof only if it yields a deterministic match in the connected repository.
 - [x] Confirm OpenAI and Twilio monitoring remains active, and refresh Stripe’s missed next-execution calculation without changing its source or callback.
 - [ ] Verify the refreshed Stripe polling job completes at its next scheduled execution and writes a successful audit/log record, then reconfirm all three provider schedules are actively executing on their six-hour cadence.
-- [ ] Recover the stalled Stripe Heartbeat job so it receives a future six-hour execution and retains its original authenticated callback behavior.
+- [x] Recover the stalled Stripe Heartbeat job so it receives a future six-hour execution and retains its original authenticated callback behavior.
+- [ ] Perform one post-poll live verification after the next OpenAI, Twilio, and recovered Stripe monitoring window, and materialize a finding only if a genuine deterministic match exists.
