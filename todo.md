@@ -115,7 +115,7 @@
 - [x] Build an investor-ready business thesis covering the customer pain, market wedge, defensibility, pricing, and milestone-based funding case.
 - [x] Create a concise live product demo script and investor collateral anchored in the validated repository connection, polling, and source-backed matching workflow.
 - [x] Prepare an investor-application answer bank, including founder narrative placeholders, company stage, traction evidence, and funding-use milestones.
-- [ ] Verify current public contact details and preferred channels for the approved ten-draft design-partner batch before asking for individual-send approval.
+- [x] Verify current public contact details and preferred channels for the approved ten-draft design-partner batch before asking for individual-send approval.
 - [x] Extend one-click source-backed finding generation to all supported changed providers, including Stripe and OpenAI, using immutable revisions for OpenAPI providers and retained changelog revisions for OpenAI.
 - [ ] Prove in automated and production validation that a full analysis run creates or refreshes persisted findings when deterministic source-backed matches exist and updates the reviewer workspace list.
-- [ ] Replace or complete the held outreach prospects so all ten approved drafts have a verified current public business channel before individual-send approval.
+- [x] Replace or complete the held outreach prospects so all ten approved drafts have a verified current public business channel before individual-send approval.

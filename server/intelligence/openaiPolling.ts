@@ -1,6 +1,6 @@
 import type { ProviderChange } from "../../shared/intelligence";
-import { getProviderPollState, recordProviderPollRun, saveProviderSourceSnapshot, upsertProviderPollState } from "../db";
-import { fetchOpenAiChangelogConditional, normalizeOpenAiChangelog, type OpenAiSourceCursor } from "./openaiAdapter";
+import { getProviderPollState, listLatestProviderSourceSnapshots, recordProviderPollRun, saveProviderSourceSnapshot, upsertProviderPollState } from "../db";
+import { fetchOpenAiChangelog, fetchOpenAiChangelogConditional, normalizeOpenAiChangelog, type OpenAiSourceCursor } from "./openaiAdapter";
 
 const OPENAI_SOURCE_URL = "https://developers.openai.com/api/docs/changelog";
 
@@ -20,6 +20,14 @@ export async function pollOpenAiRevision(fetchImpl: typeof fetch = fetch): Promi
   try {
     const current = await fetchOpenAiChangelogConditional(cursor, fetchImpl);
     if (current.status === "unchanged") {
+      const retainedSnapshots = await listLatestProviderSourceSnapshots("openai", 1);
+      if (retainedSnapshots.length === 0) {
+        const baseline = await fetchOpenAiChangelog(fetchImpl);
+        if (baseline.contentSha256 !== current.cursor.contentSha256) {
+          throw new Error("OpenAI changelog changed while establishing the retained baseline; retry the poll.");
+        }
+        await saveProviderSourceSnapshot(baseline);
+      }
       await upsertProviderPollState({ provider: "openai", sourceUrl: state?.sourceUrl ?? current.sourceUrl, scheduleCronTaskUid: state?.scheduleCronTaskUid, etag: current.cursor.etag, commitSha: current.cursor.sourceRef, contentSha256: current.cursor.contentSha256, lastAttemptAt: now, lastSuccessAt: now, lastStatus: "unchanged", lastError: null });
       await recordProviderPollRun({ provider: "openai", priorCommitSha: state?.commitSha, nextCommitSha: current.cursor.sourceRef, etag: current.cursor.etag, contentSha256: current.cursor.contentSha256, outcome: "unchanged" });
       return { provider: "openai", outcome: "unchanged", priorCommitSha: state?.commitSha ?? undefined, nextCommitSha: current.cursor.sourceRef, changeCount: 0, changes: [] };

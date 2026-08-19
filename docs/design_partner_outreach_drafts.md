@@ -6,14 +6,14 @@ These are **review-ready drafts, not sent messages**. They are addressed to an e
 |---:|---|---|---|---|
 | 1 | n8n | VP Engineering or Head of Platform | Its official page documents OpenAI and Twilio nodes, including call and SMS operations. [1] | Test whether official upstream changes can be routed to node maintainers before users notice a regression. |
 | 2 | Activepieces | CTO or VP Engineering | Its public Stripe integration lists payment, subscription, refund, dispute, and checkout event surfaces. [2] | Test whether one source-backed Stripe change can be tied to the relevant piece and test owner. |
-| 3 | Pipedream | VP Engineering or Connect Platform lead | Its docs describe customer-facing integrations, a source-available component registry, and GitHub contribution workflow. [3] | Test the value of change-to-component evidence for an API integration platform. |
+| 3 | Workday Build / Orchestrate | Platform Engineering or Developer Platform lead | Workday Build presents an AI developer platform, while Workday Orchestrate documents cross-application workflows, application APIs, and integration monitoring. [3] | Test whether source-backed change evidence helps an enterprise integration platform identify a likely code owner before release impact. |
 | 4 | Cal.com | CTO or Integrations lead | Its public materials describe Stripe payments and a Stripe app installation path. [4] | Test whether billing-integration change evidence is useful before a scheduling/payment release. |
-| 5 | Voiceflow | VP Engineering or Conversational AI lead | Its changelog documents a Twilio integration update. [5] | Test whether a read-only code map would make provider-change review more predictable for voice integrations. |
+| 5 | Voiceflow | VP Engineering or Conversational AI lead | Its documentation describes API and integration tools, and its public materials document Twilio integration context. [5] | Test whether a read-only code map would make provider-change review more predictable for voice integrations. |
 | 6 | Zapier | Platform Engineering or Developer Platform lead | Its public integration directory describes a Stripe–Twilio workflow pairing. [6] | Ask whether a narrowly scoped provider-source-to-code review fits a complex connector estate. |
 | 7 | Tray.ai | CTO or Integration Runtime lead | Its public directory describes Twilio and Stripe connector automation. [7] | Test a small proof point around connector maintenance and change ownership. |
 | 8 | MESA | CTO or Integration Engineering lead | Its public directory describes a Stripe-to-Twilio integration scenario. [8] | Ask about the cost of discovering upstream connector changes late. |
-| 9 | Pipedream Community | Engineering Community or Components lead | Pipedream publicly maintains a component registry and community contribution surface. [3] | Request a feedback conversation about safe evidence boundaries for maintained API components. |
-| 10 | Activepieces Community | Open-source maintainer or Platform lead | Activepieces publishes both Stripe trigger/action detail and open-source entry points. [2] | Request a feedback conversation about source-backed maintenance signals for popular pieces. |
+| 9 | Workday Developers | Developer Community or Platform Programs lead | Workday Developers publishes versioned APIs, developer resources, and a collaboration forum. [9] | Request a feedback conversation about safe evidence boundaries for teams building and maintaining API-connected applications. |
+| 10 | Activepieces Community | Open-source maintainer or Platform lead | Activepieces publishes both Stripe trigger/action detail and an official forum, repository, and contributor community. [2] [10] | Request a feedback conversation about source-backed maintenance signals for popular pieces. |
 
 ## Message A — Initial Request
 
@@ -38,14 +38,14 @@ Use the company-specific line from the table in the second paragraph. Do not ins
 |---|---|
 | n8n | “Your public OpenAI and Twilio workflow support made me curious how provider-specific changes are currently assigned to node or runtime owners.” |
 | Activepieces | “The published Stripe surface spans payment, subscription, refund, dispute, and checkout events, which is the kind of maintenance boundary Sentinel is designed to make reviewable.” |
-| Pipedream | “Your source-available component registry is a compelling setting to test whether provider revisions can be linked to a likely component and reviewer without creating noisy alerts.” |
+| Workday Build / Orchestrate | “Your public Workday Build and Orchestrate materials describe API-connected workflows and monitoring, which makes this a useful reality check on whether upstream-change evidence would identify an owner early enough to matter.” |
 | Cal.com | “Your documented Stripe payment path is a concrete example of a focused integration surface where upstream-change context may save a release review cycle.” |
 | Voiceflow | “Your public Twilio integration updates suggest an opportunity to discuss a safer way to connect a provider change to the implementation owner before a customer-impacting release.” |
 | Zapier | “Because public workflows join Stripe and Twilio surfaces, I would value a reality check on whether source-to-code evidence would help or simply add maintenance noise.” |
 | Tray.ai | “Your public Stripe and Twilio connector coverage is a useful case for testing whether a narrow, reviewer-first signal can help connector teams prioritize change work.” |
 | MESA | “Your public Stripe-to-Twilio workflow context makes this a focused conversation about connector change review rather than a broad monitoring pitch.” |
-| Pipedream Community | “The public component contribution model makes a good test case for whether provenance and a confidence score are useful to maintainers.” |
-| Activepieces Community | “The public piece catalog offers a good setting to test whether official provider changes can be made actionable without demanding repository write access.” |
+| Workday Developers | “The developer program’s public API and collaboration surface makes this a good setting to discuss whether provenance and a confidence score are useful to teams maintaining API-connected applications.” |
+| Activepieces Community | “The public piece catalog and contributor community offer a good setting to test whether official provider changes can be made actionable without demanding repository write access.” |
 
 ## Message B — Five Business Days Later
 
@@ -63,9 +63,11 @@ The current workspace has **no enabled outbound email or CRM connector**. Each d
 
 [1]: https://n8n.io/integrations/openai/and/twilio/ "n8n — OpenAI and Twilio integration"
 [2]: https://www.activepieces.com/pieces/stripe "Activepieces — Stripe integrations"
-[3]: https://pipedream.com/docs "Pipedream — Documentation"
+[3]: https://www.workday.com/en-us/why-workday/workday-build.html "Workday Build"
 [4]: https://cal.com/features/payments "Cal.com — Payments"
 [5]: https://docs.voiceflow.com/changelog/changelog "Voiceflow — Changelog"
 [6]: https://zapier.com/apps/stripe/integrations/twilio "Zapier — Stripe and Twilio integration"
 [7]: https://tray.ai/connectors/twilio-stripe-integrations/ "Tray.ai — Twilio and Stripe integrations"
 [8]: https://www.getmesa.com/apps/stripe/integrate/twilio "MESA — Stripe to Twilio integration"
+[9]: https://developer.workday.com/ "Workday Developers"
+[10]: https://github.com/activepieces/activepieces "Activepieces repository"
