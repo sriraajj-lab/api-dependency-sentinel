@@ -11,3 +11,7 @@ The onboarding flow remains read-only. A connection records the repository owner
 The production `/connect/github` route, its callback-state guard, protected candidate-list procedure, and repository-selection mutation have automated-test and production-build coverage. During initial manual validation, the external Manus application-authorization page at `manus.im/app-auth` rendered as a blank white page in the available browser surface. The onboarding flow now bypasses that unavailable portal and begins with GitHub authorization directly; no repository data is exposed or altered before the explicit repository-selection step.
 
 The remaining live test begins at `https://venturesig-e4ipjaps.manus.space/connect/github`: select **Continue with GitHub**, authorize the GitHub App, and choose only `sriraajj-lab/api-dependency-sentinel-test`. Do not bypass the browser step with copied session cookies, bearer tokens, or a direct repository mutation.
+
+## Completed production validation
+
+The GitHub-first flow was completed in production using the existing GitHub App installation. It returned only `sriraajj-lab/api-dependency-sentinel-test`, recorded an explicit read-only repository connection for the verified GitHub identity, and reached the authenticated reviewer workspace. The production callback origin was also verified to use the registered public Sentinel domain rather than the internal deployment host.

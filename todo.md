@@ -98,10 +98,10 @@
 - [x] Design, implement, and validate scheduled OpenAI and Twilio provider polling with durable cursor state and compact audit records.
 - [x] Verify a real scheduled OpenAI callback advances durable provider state and writes a bounded audit record.
 - [x] Verify a real scheduled Twilio callback advances durable provider state and writes a bounded audit record.
-- [ ] Build and validate an authenticated repository-connection onboarding flow that securely lists permitted GitHub App repositories and records an owner-selected connection.
+- [x] Build and validate an authenticated repository-connection onboarding flow that securely lists permitted GitHub App repositories and records an owner-selected connection.
 - [x] Prepare ten research-backed design-partner outreach drafts from the sales playbook and establish a review-and-approval sending workflow.
 - [x] Verify official public integration evidence for every company represented in the ten-draft design-partner outreach cohort.
-- [ ] Diagnose and fix the live repository-onboarding sign-in flow that fails to load after the user starts authentication.
-- [ ] Diagnose and fix the blank external authorization page shown during live repository-onboarding sign-in.
-- [ ] Revalidate the live OAuth portal after a normal Manus browser session is available; the current external authorization surface remains blank despite the product route and OAuth handoff tests passing.
-- [ ] Replace the unavailable external Manus sign-in handoff with a GitHub-first, server-issued session that permits only verified read-only repository onboarding.
+- [x] Diagnose and fix the live repository-onboarding sign-in flow that fails to load after the user starts authentication.
+- [x] Diagnose and fix the blank external authorization page shown during live repository-onboarding sign-in. Replaced the unavailable external portal with GitHub-first onboarding.
+- [x] Revalidate the live OAuth portal after a normal Manus browser session is available; the current external authorization surface remains blank despite the product route and OAuth handoff tests passing. Superseded by the validated GitHub-first flow.
+- [x] Replace the unavailable external Manus sign-in handoff with a GitHub-first, server-issued session that permits only verified read-only repository onboarding.
