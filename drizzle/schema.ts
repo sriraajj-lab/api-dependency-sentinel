@@ -1,4 +1,4 @@
-import { index, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
+import { index, int, mediumtext, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -212,7 +212,7 @@ export const providerSourceSnapshots = mysqlTable(
     sourceRef: varchar("sourceRef", { length: 128 }).notNull(),
     contentSha256: varchar("contentSha256", { length: 64 }).notNull(),
     contentType: varchar("contentType", { length: 255 }).notNull(),
-    body: text("body").notNull(),
+    body: mediumtext("body").notNull(),
     retrievedAt: timestamp("retrievedAt").notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },

@@ -1,0 +1,1 @@
+ALTER TABLE `providerSourceSnapshots` MODIFY COLUMN `body` mediumtext NOT NULL;
