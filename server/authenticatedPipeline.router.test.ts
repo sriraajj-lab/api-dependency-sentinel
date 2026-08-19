@@ -6,6 +6,8 @@ const dbMocks = vi.hoisted(() => ({
   getRepositoryOperationalStatus: vi.fn(),
   getLatestChangedProviderPollRun: vi.fn(),
   listLatestProviderSourceSnapshots: vi.fn(),
+  listPipelineFindings: vi.fn(),
+  listUserRepositories: vi.fn(),
   persistProvenancePlan: vi.fn(),
   recordRepositoryScanRun: vi.fn(),
 }));
@@ -138,6 +140,26 @@ describe("authenticated full pipeline router", () => {
     expect(diffOpenAiChangelog).toHaveBeenCalledWith(expect.objectContaining({ sourceRef: "prior-revision" }), expect.objectContaining({ sourceRef: "next-revision" }));
     expect(dbMocks.persistProvenancePlan).toHaveBeenCalledWith(300001, expect.any(Object));
     expect(result.findingsCreated).toBe(1);
+  });
+
+  it("returns a newly persisted finding in the reviewer workspace immediately after a full analysis run", async () => {
+    const change = prepareChangedProvider("stripe");
+    dbMocks.getLatestChangedProviderPollRun.mockResolvedValue({ priorCommitSha: "a".repeat(40), nextCommitSha: "b".repeat(40) });
+    fetchStripeOpenApi.mockResolvedValueOnce({ sourceRef: "a".repeat(40) }).mockResolvedValueOnce({ sourceRef: "b".repeat(40) });
+    diffStripeOpenApi.mockReturnValue([change]);
+    const findings: Array<{ id: number; evidencePacketJson: string }> = [];
+    dbMocks.persistProvenancePlan.mockImplementation(async () => {
+      findings.push({ id: 901, evidencePacketJson: JSON.stringify({ findingId: "stripe-change", provider: "stripe" }) });
+      return 901;
+    });
+    dbMocks.listUserRepositories.mockResolvedValue([{ id: 300001, userId: 21, owner: "sriraajj-lab", name: "api-dependency-sentinel-test" }]);
+    dbMocks.listPipelineFindings.mockImplementation(async () => findings);
+
+    await appRouter.createCaller(context()).sentinel.runAuthenticatedPipeline({ repositoryId: 300001 });
+    const workspace = await appRouter.createCaller(context()).sentinel.persistedPipelineWorkspace();
+
+    expect(dbMocks.listPipelineFindings).toHaveBeenCalledWith(300001);
+    expect(workspace).toMatchObject({ mode: "connected", findings: [{ id: 901, evidencePacket: { findingId: "stripe-change", provider: "stripe" } }] });
   });
 
   it("records a bounded failed scan audit and returns a safe error when analysis fails", async () => {
