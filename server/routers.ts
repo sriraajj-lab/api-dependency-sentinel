@@ -2,7 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { getActiveGitHubConnectSession, getRepositoryForUser, listPipelineFindings, listRepositoryFindings, listUserRepositories, persistProvenancePlan, recordRepositoryScanRun, upsertConnectedRepository } from "./db";
+import { getActiveGitHubConnectSession, getRepositoryForUser, getRepositoryOperationalStatus, listPipelineFindings, listRepositoryFindings, listUserRepositories, persistProvenancePlan, recordRepositoryScanRun, upsertConnectedRepository } from "./db";
 import { buildDemoRiskMap, supportedProviders } from "./sentinel";
 import { buildPipelinePreviewArtifact, buildPipelinePreviewRiskMap } from "./intelligence/pipelinePreview";
 import { scanInstalledTypeScriptRepository } from "./intelligence/githubRepositoryScanner";
@@ -68,6 +68,7 @@ export const appRouter = router({
       const findings = await listRepositoryFindings(selectedRepository.id);
       return { mode: "connected" as const, repositories, findings };
     }),
+    repositoryStatus: protectedProcedure.query(async ({ ctx }) => getRepositoryOperationalStatus(ctx.user.id)),
     persistPipelinePreview: protectedProcedure
       .input(z.object({ repositoryId: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {

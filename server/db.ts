@@ -97,6 +97,16 @@ export async function listUserRepositories(userId: number) {
   return db.select().from(repositories).where(eq(repositories.userId, userId)).orderBy(desc(repositories.updatedAt));
 }
 
+export async function getRepositoryOperationalStatus(userId: number) {
+  const db = await getDb();
+  if (!db) return { repository: undefined, lastScan: undefined, providerPolls: [] };
+  const [repository] = await db.select().from(repositories).where(eq(repositories.userId, userId)).orderBy(desc(repositories.updatedAt)).limit(1);
+  if (!repository) return { repository: undefined, lastScan: undefined, providerPolls: [] };
+  const [lastScan] = await db.select().from(repositoryScanRuns).where(eq(repositoryScanRuns.repositoryId, repository.id)).orderBy(desc(repositoryScanRuns.scannedAt)).limit(1);
+  const providerPolls = await db.select().from(providerPollStates);
+  return { repository, lastScan, providerPolls: providerPolls.sort((left, right) => left.provider.localeCompare(right.provider)) };
+}
+
 export async function createGitHubConnectSession(input: { state: string; expiresAt: Date }) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available for GitHub connection onboarding.");
