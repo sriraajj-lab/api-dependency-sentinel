@@ -105,7 +105,9 @@
 - [x] Diagnose and fix the blank external authorization page shown during live repository-onboarding sign-in. Replaced the unavailable external portal with GitHub-first onboarding.
 - [x] Revalidate the live OAuth portal after a normal Manus browser session is available; the current external authorization surface remains blank despite the product route and OAuth handoff tests passing. Superseded by the validated GitHub-first flow.
 - [x] Replace the unavailable external Manus sign-in handoff with a GitHub-first, server-issued session that permits only verified read-only repository onboarding.
-- [ ] Add a repository-status card showing the connected repository, last scan timestamp, and Stripe, OpenAI, and Twilio poll timestamps.
+- [x] Add a repository-status card showing the connected repository, last scan timestamp, and Stripe, OpenAI, and Twilio poll timestamps.
 - [ ] Enable a one-click authenticated pipeline scan immediately after a verified repository connection, with clear in-progress, success, and failure states.
 - [ ] Validate the new repository-status and one-click scan experience with automated coverage and production browser verification.
+- [ ] Implement a one-click protected full pipeline action that scans the selected repository and refreshes persisted review findings, not only scan metadata.
+- [ ] Add success, failure, and post-run finding-refresh tests for the full one-click pipeline action, then confirm it in the production workspace.
 - [ ] Present the ten prepared design-partner outreach drafts for user review and collect explicit per-batch send approval before external delivery.

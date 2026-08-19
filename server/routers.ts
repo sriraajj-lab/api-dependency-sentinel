@@ -110,6 +110,49 @@ export const appRouter = router({
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Read-only repository scan failed." });
         }
       }),
+    runAuthenticatedPipeline: protectedProcedure
+      .input(z.object({ repositoryId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const repository = await getRepositoryForUser(input.repositoryId, ctx.user.id);
+        if (!repository) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Repository is not available to the current user." });
+        }
+        try {
+          const scan = await scanInstalledTypeScriptRepository({ repositoryFullName: `${repository.owner}/${repository.name}` });
+          await recordRepositoryScanRun({
+            repositoryId: repository.id,
+            commitSha: scan.commitSha,
+            status: "succeeded",
+            fileCount: scan.fileCount,
+            dependencyCount: scan.evidence.dependencies.length,
+            codeEvidenceCount: scan.evidence.codeEvidence.length,
+          });
+          const status = await getRepositoryOperationalStatus(ctx.user.id);
+          const installedPackages = new Set(scan.evidence.dependencies.map(dependency => dependency.packageName.toLowerCase()));
+          const monitoredProviders = status.providerPolls
+            .filter(poll => installedPackages.has(poll.provider.toLowerCase()))
+            .map(poll => ({ provider: poll.provider, lastStatus: poll.lastStatus, lastSuccessAt: poll.lastSuccessAt }));
+          const changedProviders = monitoredProviders.filter(provider => provider.lastStatus === "changed").map(provider => provider.provider);
+          return {
+            scan,
+            monitoredProviders,
+            changedProviders,
+            findingsCreated: 0,
+            nextStep: changedProviders.length > 0
+              ? "Provider change state is available for reviewer matching; no source-backed impact finding was fabricated during this scan."
+              : "Repository evidence and current provider state are synchronized; no new provider change is ready for matching.",
+          };
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown GitHub repository scan failure";
+          await recordRepositoryScanRun({
+            repositoryId: repository.id,
+            commitSha: "unavailable",
+            status: "failed",
+            errorSummary: message,
+          });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Read-only repository analysis failed." });
+        }
+      }),
     persistedPipelineWorkspace: protectedProcedure.query(async ({ ctx }) => {
       const repositories = await listUserRepositories(ctx.user.id);
       const selectedRepository = repositories[0];
