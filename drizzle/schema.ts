@@ -44,7 +44,7 @@ export const githubConnectSessions = mysqlTable(
   "githubConnectSessions",
   {
     state: varchar("state", { length: 128 }).primaryKey(),
-    userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+    userId: int("userId").references(() => users.id, { onDelete: "cascade" }),
     candidatesJson: text("candidatesJson"),
     expiresAt: timestamp("expiresAt").notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),

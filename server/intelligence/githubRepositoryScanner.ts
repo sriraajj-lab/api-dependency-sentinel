@@ -35,6 +35,13 @@ export type GitHubConnectCandidate = {
   defaultBranch: string;
 };
 
+export type GitHubAuthenticatedUser = {
+  id: number;
+  login: string;
+  name?: string | null;
+  email?: string | null;
+};
+
 function normalizePem(rawPem: string) {
   return rawPem.replace(/\\n/g, "\n").replace(/\r\n/g, "\n").trim();
 }
@@ -102,6 +109,10 @@ export async function exchangeGitHubUserCode(input: { code: string; redirectUri:
   const payload = (await response.json()) as { access_token?: string; error?: string; error_description?: string };
   if (!payload.access_token) throw new Error(`GitHub user authorization exchange failed: ${payload.error_description ?? payload.error ?? "missing access token"}`);
   return payload.access_token;
+}
+
+export async function getGitHubAuthenticatedUser(input: { userAccessToken: string; fetchImpl?: FetchLike }): Promise<GitHubAuthenticatedUser> {
+  return githubJson<GitHubAuthenticatedUser>(`${GITHUB_API}/user`, input.userAccessToken, input.fetchImpl ?? fetch);
 }
 
 export async function listGitHubConnectCandidates(input: { userAccessToken: string; appId?: string; privateKey?: string; fetchImpl?: FetchLike }): Promise<GitHubConnectCandidate[]> {

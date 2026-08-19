@@ -97,10 +97,10 @@ export async function listUserRepositories(userId: number) {
   return db.select().from(repositories).where(eq(repositories.userId, userId)).orderBy(desc(repositories.updatedAt));
 }
 
-export async function createGitHubConnectSession(input: { state: string; userId: number; expiresAt: Date }) {
+export async function createGitHubConnectSession(input: { state: string; expiresAt: Date }) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available for GitHub connection onboarding.");
-  await db.insert(githubConnectSessions).values({ state: input.state, userId: input.userId, expiresAt: input.expiresAt });
+  await db.insert(githubConnectSessions).values({ state: input.state, expiresAt: input.expiresAt });
 }
 
 export async function getGitHubConnectSession(state: string) {
@@ -110,10 +110,10 @@ export async function getGitHubConnectSession(state: string) {
   return result[0];
 }
 
-export async function saveGitHubConnectCandidates(input: { state: string; candidatesJson: string }) {
+export async function saveGitHubConnectCandidates(input: { state: string; userId: number; candidatesJson: string }) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available for GitHub connection onboarding.");
-  await db.update(githubConnectSessions).set({ candidatesJson: input.candidatesJson }).where(eq(githubConnectSessions.state, input.state));
+  await db.update(githubConnectSessions).set({ userId: input.userId, candidatesJson: input.candidatesJson }).where(eq(githubConnectSessions.state, input.state));
 }
 
 export async function getActiveGitHubConnectSession(userId: number) {

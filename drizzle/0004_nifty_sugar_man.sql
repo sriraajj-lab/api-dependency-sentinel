@@ -1,0 +1,1 @@
+ALTER TABLE `githubConnectSessions` MODIFY COLUMN `userId` int;
