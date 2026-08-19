@@ -10,8 +10,13 @@ import { getSessionCookieOptions } from "./_core/cookies";
 const SESSION_TTL_MS = 10 * 60 * 1000;
 const GITHUB_CONNECT_STATE_COOKIE = "__Host-github_connect_state";
 
-function originFor(req: Request) {
-  return `${req.protocol}://${req.get("host")}`;
+export function originFor(req: Pick<Request, "protocol" | "get">) {
+  const forwardedProtocol = req.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const forwardedHost = req.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const protocol = forwardedProtocol || req.protocol;
+  const host = forwardedHost || req.get("host");
+  if (!host) throw new Error("A request host is required for GitHub OAuth callback construction.");
+  return `${protocol}://${host}`;
 }
 
 function callbackUrl(req: Request) {
