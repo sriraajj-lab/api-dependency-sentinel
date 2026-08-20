@@ -23,6 +23,16 @@ The campaign is designed to collect evidence, not impressions. Every prospective
 | 5 | Tray.ai / MESA | How integration teams prioritize upstream connector changes. | Evidence of recurring connector maintenance and a candidate pilot repository. | Identify the right current role and request approval to send one relevant draft. |
 | 6 | Zapier / Workday / community routes | Validate the broader platform story after the narrow wedge is understood. | A concrete reaction to ownership, provenance, or reviewer workflow. | Use only a relevant company-published route and request individual approval. |
 
+### Recipient Research Log
+
+| Target | Current public finding | Safe conclusion | Next verification step |
+|---|---|---|---|
+| n8n | Its public imprint identifies Jan Oberhauser as n8n GmbH’s Managing Director, and its contact page provides official sales and implementation-partnership routes. [5] [6] [15] [16] | Jan Oberhauser is a verified founder/executive candidate. Use the official sales form for a product-use-case conversation or `partners@n8n.io` only if the message is genuinely framed as an implementation-partnership discussion; do not use the legal address. | Prepare an executive-level version of Draft 1, select the matching official route, and ask for one-message send approval. |
+| Activepieces | Its YC company page lists Mohammad AbuAboud as Co-Founder & CTO, and the company publishes a sales form for pricing, security, self-hosting, and use-case conversations. [7] [8] | Mohammad AbuAboud is an appropriate technical-recipient candidate; the sales form is an official business route, but neither should be used without founder approval of the final message. | Prepare a CTO-addressed version of Draft 2 that names the public Stripe Piece signal and ask for one-message send approval. |
+| Cal.com | Its public site identifies Keith Williams as Head of Engineering through a public professional profile result and presents an official “Talk to sales”/demo route. [9] [10] | Keith Williams is a plausible engineering-recipient candidate, while the public sales/demo route is the safer business channel. The recipient role needs a final public-role check immediately before sending. | Prepare a Head-of-Engineering version of Draft 4 using the public Stripe payments signal and ask for one-message send approval. |
+| Voiceflow | Its official contributor page identifies Tyler Han as CTO and co-founder, while the enterprise page presents a public demo route. [11] [12] | Tyler Han is an appropriate technical-recipient candidate. The enterprise demo route is suitable for a company-to-company discovery request, but neither should be used without founder approval of the final message. | Prepare a CTO-addressed version of Draft 5 that refers only to the public Twilio-integration context and ask for one-message send approval. |
+| Tray.ai | An August 2026 official Tray.ai article identifies Alistair Russell as co-founder and CTO, and the company provides a sales form that routes use-case details to the appropriate team. [13] [14] | Alistair Russell is an appropriate technical-recipient candidate. The sales form is an official business route; no contact should occur until the founder approves the final personalized copy. | Prepare a CTO-addressed version of Draft 7 tied only to the public Stripe/Twilio connector signal and ask for one-message send approval. |
+
 ### Discovery Call Scorecard
 
 | Question | Evidence to capture | Product decision it informs |
@@ -65,3 +75,15 @@ The campaign is designed to collect evidence, not impressions. Every prospective
 [2]: https://boldstart.vc/ "boldstart ventures"
 [3]: https://engineeringcapital.com/ "Engineering Capital"
 [4]: https://a16z.com/infra/ "a16z Infrastructure"
+[5]: https://builtin.com/job/director-engineering-europe-remote/9985459 "n8n Director of Engineering job listing"
+[6]: https://jobs.ashbyhq.com/n8n/443fd5c2-6501-45cf-b8c8-851fe94d48f9 "n8n Head of Solutions Engineering job listing"
+[7]: https://www.ycombinator.com/companies/activepieces "Activepieces — YC company profile"
+[8]: https://www.activepieces.com/sales "Activepieces — Talk to sales"
+[9]: https://www.linkedin.com/in/keithwillcode "Keith Williams — public professional profile"
+[10]: https://cal.com/ "Cal.com — official site and business routes"
+[11]: https://www.voiceflow.com/contributors/tyler-han "Tyler Han — Voiceflow contributor profile"
+[12]: https://www.voiceflow.com/enterprise "Voiceflow Enterprise"
+[13]: https://tray.ai/blog/introducing-tray-helix/ "Tray.ai — Introducing Tray Helix"
+[14]: https://tray.ai/contact/ "Tray.ai — Talk to Sales"
+[15]: https://n8n.io/imprint/ "n8n — Imprint"
+[16]: https://n8n.io/contact/ "n8n — Contact"

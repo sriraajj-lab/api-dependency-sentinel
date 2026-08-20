@@ -127,3 +127,6 @@
 - [x] Produce a plain-language five-to-ten point explanation of API Dependency Sentinel and its immediate practical value.
 - [x] Develop an evidence-backed scale thesis that identifies product expansion paths, defensibility, buyer impact, and measurable milestones.
 - [x] Create a staged marketing, sales, and investor outreach plan with channels, positioning, qualification criteria, and approval gates for external contact.
+- [x] Identify current public recipient candidates and appropriate business channels for the first five approved design-partner conversations.
+- [x] Prepare final personalized copy for each of the first five researched design-partner messages.
+- [ ] Request explicit per-message send approval for each first-wave message, naming its recipient candidate, company, and official channel.
