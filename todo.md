@@ -134,3 +134,6 @@
 - [ ] Record the actual submission outcome, timestamp, channel, and any delivery limitations for each first-wave outreach attempt.
 - [x] Produce a comprehensive handover document covering the built product, access and operating instructions, security boundaries, business model, scale roadmap, go-to-market plan, investor case, and current known limitations.
 - [x] Produce a concrete paid-pilot offer, pricing experiment, qualification rubric, and founder sales playbook to convert useful Risk Maps into first recurring revenue.
+- [x] Define and apply an evidence-based ideal-customer profile and scorecard for first paid pilots.
+- [x] Research, verify, and rank a fresh shortlist of high-fit prospective clients with public integration and technical-stack signals.
+- [x] Prepare approval-gated outreach recommendations for the highest-probability prospects without sending unsolicited messages.
