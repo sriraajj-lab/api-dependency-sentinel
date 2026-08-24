@@ -61,6 +61,12 @@ The campaign is designed to collect evidence, not impressions. Every prospective
 | Days 15–21 | Offer a read-only Risk Map to the strongest fit. | Build the single feature most often requested by qualified prospects. | Prepare an investor proof packet: problem, demo, learning, asks. | Offer paid monitoring only after a useful Risk Map review. |
 | Days 22–30 | Convert qualified pilots to a monthly monitoring offer. | Publish a permissioned or anonymized evidence walkthrough. | Submit the YC application if founder-approved; request warm introductions to specialist investors where available. | Decide whether the current wedge has repeatable demand or needs repositioning. |
 
+## Submission Log
+
+| Date (UTC) | Company | Approved route | Outcome | Evidence boundary |
+|---|---|---|---|---|
+| 2026-08-20 | Activepieces | Official sales form | **Submitted** — user confirmed the form was sent after entering sender details directly. | No recipient-specific claim or customer representation was added beyond the reviewed copy. |
+
 ## External Action Controls
 
 1. Do not send a prospect message, investor email, application, forum post, or social post without the founder’s specific approval immediately before that action.
