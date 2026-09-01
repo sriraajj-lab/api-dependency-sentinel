@@ -138,14 +138,17 @@ export const appRouter = router({
           const monitoredProviders = status.providerPolls
             .filter(poll => installedPackages.has(poll.provider.toLowerCase()))
             .map(poll => ({ provider: poll.provider, lastStatus: poll.lastStatus, lastSuccessAt: poll.lastSuccessAt }));
-          const changedProviders = monitoredProviders.filter(provider => provider.lastStatus === "changed").map(provider => provider.provider);
+          const changedProviders: string[] = [];
           const persistedFindingIds: number[] = [];
           const matchingNotes: string[] = [];
-          const supportedChangedProviders = changedProviders.filter((provider): provider is SupportedProvider =>
+          const supportedMonitoredProviders = monitoredProviders.map(item => item.provider).filter((provider): provider is SupportedProvider =>
             provider === "stripe" || provider === "openai" || provider === "twilio"
           );
-          for (const provider of supportedChangedProviders) {
+          for (const provider of supportedMonitoredProviders) {
             try {
+              const revision = await getLatestChangedProviderPollRun(provider);
+              if (!revision) continue;
+              changedProviders.push(provider);
               let changes;
               if (provider === "openai") {
                 const snapshots = await listLatestProviderSourceSnapshots(provider, 2);
@@ -166,7 +169,6 @@ export const appRouter = router({
                 });
                 changes = diffOpenAiChangelog(toSnapshot(priorRow), toSnapshot(nextRow));
               } else {
-                const revision = await getLatestChangedProviderPollRun(provider);
                 if (!revision?.priorCommitSha || !revision.nextCommitSha || revision.priorCommitSha === revision.nextCommitSha) {
                   matchingNotes.push(`${provider} has no distinct immutable source revisions available for historical matching yet.`);
                   continue;

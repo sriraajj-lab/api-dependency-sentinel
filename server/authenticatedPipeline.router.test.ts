@@ -61,6 +61,7 @@ function prepareChangedProvider(provider: "stripe" | "openai" | "twilio") {
   matchChangeToRepository.mockReturnValue(candidate);
   buildProvenancePlan.mockReturnValue({ nodes: [], edges: [], evidencePacket: {} });
   dbMocks.persistProvenancePlan.mockResolvedValue(901);
+  dbMocks.getLatestChangedProviderPollRun.mockResolvedValue({ priorCommitSha: "a".repeat(40), nextCommitSha: "b".repeat(40) });
   return change;
 }
 
@@ -96,6 +97,9 @@ describe("authenticated full pipeline router", () => {
         { provider: "twilio", lastStatus: "unchanged", lastSuccessAt: new Date() },
       ],
     });
+    dbMocks.getLatestChangedProviderPollRun.mockImplementation(async provider => provider === "openai"
+      ? { priorCommitSha: "prior-etag", nextCommitSha: "next-etag" }
+      : undefined);
     dbMocks.listLatestProviderSourceSnapshots.mockResolvedValue([]);
 
     const result = await appRouter.createCaller(context()).sentinel.runAuthenticatedPipeline({ repositoryId: 300001 });
@@ -138,6 +142,27 @@ describe("authenticated full pipeline router", () => {
 
     expect(dbMocks.listLatestProviderSourceSnapshots).toHaveBeenCalledWith("openai", 2);
     expect(diffOpenAiChangelog).toHaveBeenCalledWith(expect.objectContaining({ sourceRef: "prior-revision" }), expect.objectContaining({ sourceRef: "next-revision" }));
+    expect(dbMocks.persistProvenancePlan).toHaveBeenCalledWith(300001, expect.any(Object));
+    expect(result.findingsCreated).toBe(1);
+  });
+
+  it("uses the latest genuine changed revision even after the current poll state becomes unchanged", async () => {
+    const change = prepareChangedProvider("openai");
+    dbMocks.getRepositoryOperationalStatus.mockResolvedValue({
+      repository: { id: 300001 },
+      lastScan: undefined,
+      providerPolls: [{ provider: "openai", lastStatus: "unchanged", lastSuccessAt: new Date() }],
+    });
+    dbMocks.listLatestProviderSourceSnapshots.mockResolvedValue([
+      retainedOpenAiSnapshot("next-revision", "b".repeat(64)),
+      retainedOpenAiSnapshot("prior-revision", "a".repeat(64)),
+    ]);
+    diffOpenAiChangelog.mockReturnValue([change]);
+
+    const result = await appRouter.createCaller(context()).sentinel.runAuthenticatedPipeline({ repositoryId: 300001 });
+
+    expect(result.changedProviders).toEqual(["openai"]);
+    expect(diffOpenAiChangelog).toHaveBeenCalled();
     expect(dbMocks.persistProvenancePlan).toHaveBeenCalledWith(300001, expect.any(Object));
     expect(result.findingsCreated).toBe(1);
   });
