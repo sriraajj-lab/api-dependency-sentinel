@@ -1,6 +1,6 @@
 # API Dependency Sentinel — Campaign Execution Queue
 
-**Status:** Prepared for founder review. No prospect or investor has been contacted through this queue.
+**Status:** One prospect submission is confirmed. The original five-message wave was stopped after client-fit re-ranking; no unverified submission is counted as delivered.
 
 ## Operating Principle
 
@@ -66,6 +66,10 @@ The campaign is designed to collect evidence, not impressions. Every prospective
 | Date (UTC) | Company | Approved route | Outcome | Evidence boundary |
 |---|---|---|---|---|
 | 2026-08-20 | Activepieces | Official sales form | **Submitted** — user confirmed the form was sent after entering sender details directly. | No recipient-specific claim or customer representation was added beyond the reviewed copy. |
+| 2026-08-24 | n8n | Official enterprise Typeform | **Not submitted** — the form did not render in the available browser session; no delivery confirmation exists. | No direct email or alternative route was used without a separate confirmation. |
+| 2026-08-24 | Cal.com | Official talk-to-sales form | **Not confirmed** — sender details were entered, but the form reset without a success state and the user did not confirm submission. | Recorded as unverified rather than treating partial form entry as delivery. |
+| 2026-08-24 | Voiceflow | Official demo route | **Not submitted; deprioritized** — the scheduling state was not verifiable and subsequent client-fit review ranked stronger prospects. | No meeting was booked and no claim of contact was made. |
+| 2026-08-24 | Tray.ai | Official sales form | **Not attempted; held** — the campaign was paused for evidence-based client re-ranking before this form was opened. | Requires renewed message-specific approval if it re-enters a future wave. |
 
 ## External Action Controls
 

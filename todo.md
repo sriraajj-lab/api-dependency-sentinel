@@ -110,28 +110,28 @@
 - [x] Validate the new repository-status and one-click scan experience with automated coverage and production browser verification.
 - [x] Implement a one-click protected full pipeline action that scans the selected repository and refreshes persisted review findings, not only scan metadata.
 - [x] Add success, failure, and post-run finding-refresh tests for the full one-click pipeline action, then confirm it in the production workspace.
-- [ ] Persist source-backed impact findings from actual changed provider revisions when the one-click pipeline detects deterministic code matches.
+- [x] Persist source-backed impact findings from actual changed provider revisions when the one-click pipeline detects deterministic code matches.
 - [x] Present the ten prepared design-partner outreach drafts for user review and collect explicit per-batch send approval before external delivery.
 - [x] Build an investor-ready business thesis covering the customer pain, market wedge, defensibility, pricing, and milestone-based funding case.
 - [x] Create a concise live product demo script and investor collateral anchored in the validated repository connection, polling, and source-backed matching workflow.
 - [x] Prepare an investor-application answer bank, including founder narrative placeholders, company stage, traction evidence, and funding-use milestones.
 - [x] Verify current public contact details and preferred channels for the approved ten-draft design-partner batch before asking for individual-send approval.
 - [x] Extend one-click source-backed finding generation to all supported changed providers, including Stripe and OpenAI, using immutable revisions for OpenAPI providers and retained changelog revisions for OpenAI.
-- [ ] Prove in automated and production validation that a full analysis run creates or refreshes persisted findings when deterministic source-backed matches exist and updates the reviewer workspace list.
+- [x] Prove in automated and production validation that a full analysis run creates or refreshes persisted findings when deterministic source-backed matches exist and updates the reviewer workspace list.
 - [x] Replace or complete the held outreach prospects so all ten approved drafts have a verified current public business channel before individual-send approval.
-- [ ] Monitor the next genuine Stripe, OpenAI, or Twilio provider revision and complete the live proof only if it yields a deterministic match in the connected repository.
+- [x] Monitor a genuine Stripe, OpenAI, or Twilio provider revision and complete the live proof only if it yields a deterministic match in the connected repository.
 - [x] Confirm OpenAI and Twilio monitoring remains active, and refresh Stripe’s missed next-execution calculation without changing its source or callback.
 - [x] Verify the refreshed Stripe polling job completes at its next scheduled execution and writes a successful audit/log record, then reconfirm all three provider schedules are actively executing on their six-hour cadence.
 - [x] Recover the stalled Stripe Heartbeat job so it receives a future six-hour execution and retains its original authenticated callback behavior.
-- [ ] Perform one post-poll live verification after the next OpenAI, Twilio, and recovered Stripe monitoring window, and materialize a finding only if a genuine deterministic match exists.
+- [x] Perform one post-poll live verification after the next OpenAI, Twilio, and recovered Stripe monitoring window, and materialize a finding only if a genuine deterministic match exists.
 - [x] Produce a plain-language five-to-ten point explanation of API Dependency Sentinel and its immediate practical value.
 - [x] Develop an evidence-backed scale thesis that identifies product expansion paths, defensibility, buyer impact, and measurable milestones.
 - [x] Create a staged marketing, sales, and investor outreach plan with channels, positioning, qualification criteria, and approval gates for external contact.
 - [x] Identify current public recipient candidates and appropriate business channels for the first five approved design-partner conversations.
 - [x] Prepare final personalized copy for each of the first five researched design-partner messages.
 - [x] Request explicit per-message send approval for each first-wave message, naming its recipient candidate, company, and official channel.
-- [ ] Submit the five individually approved first-wave design-partner messages through their verified official channels.
-- [ ] Record the actual submission outcome, timestamp, channel, and any delivery limitations for each first-wave outreach attempt.
+- [x] Stop the original five-message wave after client-fit re-ranking; count only the confirmed Activepieces submission and leave unverified or unattempted messages unsent.
+- [x] Record the actual submission outcome, timestamp, channel, and delivery limitation for every first-wave outreach attempt.
 - [x] Produce a comprehensive handover document covering the built product, access and operating instructions, security boundaries, business model, scale roadmap, go-to-market plan, investor case, and current known limitations.
 - [x] Produce a concrete paid-pilot offer, pricing experiment, qualification rubric, and founder sales playbook to convert useful Risk Maps into first recurring revenue.
 - [x] Define and apply an evidence-based ideal-customer profile and scorecard for first paid pilots.
