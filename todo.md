@@ -140,5 +140,5 @@
 
 - [x] Create a new private GitHub repository and upload the API Dependency Sentinel source code for version control and handoff.
 - [x] Change the API Dependency Sentinel GitHub repository from private to public and verify public access.
-- [ ] Repair the production authentication handoff that returns "Authorize params not found" after account selection.
-- [ ] Verify the GitHub repository remains public and reachable after the production repair.
+- [x] Repair the production authentication handoff that returns "Authorize params not found" after account selection.
+- [x] Verify the GitHub repository remains public and reachable after the production repair.
