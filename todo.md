@@ -137,3 +137,5 @@
 - [x] Define and apply an evidence-based ideal-customer profile and scorecard for first paid pilots.
 - [x] Research, verify, and rank a fresh shortlist of high-fit prospective clients with public integration and technical-stack signals.
 - [x] Prepare approval-gated outreach recommendations for the highest-probability prospects without sending unsolicited messages.
+
+- [ ] Create a new private GitHub repository and upload the API Dependency Sentinel source code for version control and handoff.
