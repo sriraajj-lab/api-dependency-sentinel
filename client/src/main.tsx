@@ -5,10 +5,12 @@ import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
-import { startLogin } from "./const";
+import { getUnauthenticatedRedirectPath } from "./lib/authRedirect";
 import "./index.css";
 
 const queryClient = new QueryClient();
+
+let authRedirectStarted = false;
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
@@ -16,9 +18,12 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
 
-  if (!isUnauthorized) return;
+  if (!isUnauthorized || authRedirectStarted) return;
 
-  startLogin();
+  const redirectPath = getUnauthenticatedRedirectPath(window.location.pathname);
+  if (!redirectPath) return;
+  authRedirectStarted = true;
+  window.location.assign(redirectPath);
 };
 
 queryClient.getQueryCache().subscribe(event => {

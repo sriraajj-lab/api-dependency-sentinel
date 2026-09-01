@@ -20,7 +20,7 @@ function formatTimestamp(value: Date | string | null | undefined) {
 }
 
 export default function LiveWorkspace() {
-  const { isAuthenticated, loading } = useAuth({ redirectOnUnauthenticated: true });
+  const { isAuthenticated, loading } = useAuth({ redirectOnUnauthenticated: true, redirectPath: "/connect/github" });
   const { data, isLoading, error } = trpc.sentinel.persistedPipelineWorkspace.useQuery(undefined, {
     enabled: isAuthenticated,
     retry: false,
