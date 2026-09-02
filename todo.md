@@ -142,3 +142,4 @@
 - [x] Change the API Dependency Sentinel GitHub repository from private to public and verify public access.
 - [x] Repair the production authentication handoff that returns "Authorize params not found" after account selection.
 - [x] Verify the GitHub repository remains public and reachable after the production repair.
+- [x] Assess and document whether API Dependency Sentinel should apply to investors as an Aria Agency product, a separate subsidiary, or a standalone venture alongside DenialsDoctor.
