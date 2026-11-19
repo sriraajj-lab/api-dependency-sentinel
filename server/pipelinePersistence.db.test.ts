@@ -32,16 +32,16 @@ describe("pipeline persistence database integration", () => {
     expect(db).toBeTruthy();
     if (!db) return;
 
-    const userInsert = await db.insert(users).values({ openId: `${token}-user`, name: "Pipeline Test User", role: "user" });
-    userId = Number(userInsert[0].insertId);
+    const userInsert = await db.insert(users).values({ openId: `${token}-user`, name: "Pipeline Test User", role: "user" }).returning({ id: users.id });
+    userId = userInsert[0].id;
     const repositoryInsert = await db.insert(repositories).values({
       userId,
       owner: "sentinel-fixtures",
       name: `${token}-repository`,
       defaultBranch: "main",
       connectionStatus: "demo",
-    });
-    repositoryId = Number(repositoryInsert[0].insertId);
+    }).returning({ id: repositories.id });
+    repositoryId = repositoryInsert[0].id;
 
     const artifact = buildPipelinePreviewArtifact();
     const plan = buildProvenancePlan(artifact.candidate, `test:${token}`);

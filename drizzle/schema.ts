@@ -1,83 +1,92 @@
-import { index, int, mediumtext, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
+import { index, integer, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
+
+export const roleEnum = pgEnum("role_enum", ["user", "admin"]);
+export const connectionStatusEnum = pgEnum("connectionstatus_enum", ["demo", "connected", "attention", "disconnected"]);
+export const findingTypeEnum = pgEnum("findingtype_enum", ["deprecation", "schema_change", "sdk_release", "behavior_change"]);
+export const severityEnum = pgEnum("severity_enum", ["critical", "high", "medium", "low"]);
+export const statusEnum = pgEnum("status_enum", ["needs_review", "triaged", "ignored", "resolved"]);
+export const lastStatusEnum = pgEnum("laststatus_enum", ["idle", "unchanged", "changed", "failed"]);
+export const outcomeEnum = pgEnum("outcome_enum", ["unchanged", "changed", "failed"]);
+export const scanStatusEnum = pgEnum("scan_status_enum", ["succeeded", "failed"]);
 
 /**
  * Core user table backing auth flow.
  * Extend this file with additional tables as your product grows.
  * Columns use camelCase to match both database fields and generated types.
  */
-export const users = mysqlTable("users", {
+export const users = pgTable("users", {
   /**
    * Surrogate primary key. Auto-incremented numeric value managed by the database.
    * Use this for relations between tables.
    */
-  id: int("id").autoincrement().primaryKey(),
+  id: serial("id").primaryKey(),
   /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: roleEnum("role").default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().$onUpdate(() => new Date()).notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-export const repositories = mysqlTable("repositories", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+export const repositories = pgTable("repositories", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
   githubRepositoryId: varchar("githubRepositoryId", { length: 64 }),
   owner: varchar("owner", { length: 255 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   defaultBranch: varchar("defaultBranch", { length: 255 }).default("main").notNull(),
   installationId: varchar("installationId", { length: 64 }),
-  connectionStatus: mysqlEnum("connectionStatus", ["demo", "connected", "attention", "disconnected"]).default("demo").notNull(),
+  connectionStatus: connectionStatusEnum("connectionStatus").default("demo").notNull(),
   lastScannedAt: timestamp("lastScannedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().$onUpdate(() => new Date()).notNull(),
 });
 
 /** Short-lived server-side GitHub App authorization handoffs; user tokens are never stored. */
-export const githubConnectSessions = mysqlTable(
+export const githubConnectSessions = pgTable(
   "githubConnectSessions",
   {
     state: varchar("state", { length: 128 }).primaryKey(),
-    userId: int("userId").references(() => users.id, { onDelete: "cascade" }),
+    userId: integer("userId").references(() => users.id, { onDelete: "cascade" }),
     candidatesJson: text("candidatesJson"),
     expiresAt: timestamp("expiresAt").notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().$onUpdate(() => new Date()).notNull(),
   },
   table => [index("github_connect_session_user_idx").on(table.userId, table.expiresAt)]
 );
 
-export const riskFindings = mysqlTable("riskFindings", {
-  id: int("id").autoincrement().primaryKey(),
-  repositoryId: int("repositoryId").notNull().references(() => repositories.id, { onDelete: "cascade" }),
+export const riskFindings = pgTable("riskFindings", {
+  id: serial("id").primaryKey(),
+  repositoryId: integer("repositoryId").notNull().references(() => repositories.id, { onDelete: "cascade" }),
   externalId: varchar("externalId", { length: 128 }).notNull().unique(),
   provider: varchar("provider", { length: 64 }).notNull(),
-  findingType: mysqlEnum("findingType", ["deprecation", "schema_change", "sdk_release", "behavior_change"]).notNull(),
-  severity: mysqlEnum("severity", ["critical", "high", "medium", "low"]).notNull(),
-  status: mysqlEnum("status", ["needs_review", "triaged", "ignored", "resolved"]).default("needs_review").notNull(),
+  findingType: findingTypeEnum("findingType").notNull(),
+  severity: severityEnum("severity").notNull(),
+  status: statusEnum("status").default("needs_review").notNull(),
   title: varchar("title", { length: 500 }).notNull(),
   sourceUrl: text("sourceUrl").notNull(),
   sourceSummary: text("sourceSummary").notNull(),
   codeReferencesJson: text("codeReferencesJson").notNull(),
   ownerHint: varchar("ownerHint", { length: 255 }),
-  riskScore: int("riskScore").notNull(),
-  confidence: int("confidence").notNull(),
+  riskScore: integer("riskScore").notNull(),
+  confidence: integer("confidence").notNull(),
   deadlineAt: timestamp("deadlineAt"),
   detectedAt: timestamp("detectedAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().$onUpdate(() => new Date()).notNull(),
 });
 
 /**
  * Append-only evidence nodes. Provider source data uses the public scope while
  * repository facts and findings use the owning user's scope key.
  */
-export const provenanceNodes = mysqlTable(
+export const provenanceNodes = pgTable(
   "provenanceNodes",
   {
     id: varchar("id", { length: 26 }).primaryKey(),
@@ -104,7 +113,7 @@ export const provenanceNodes = mysqlTable(
  * dependency, and analysis facts. The locator points to a small reproducible
  * source fragment rather than storing complete documents or source trees.
  */
-export const provenanceEdges = mysqlTable(
+export const provenanceEdges = pgTable(
   "provenanceEdges",
   {
     id: varchar("id", { length: 26 }).primaryKey(),
@@ -114,7 +123,7 @@ export const provenanceEdges = mysqlTable(
     relationType: varchar("relationType", { length: 64 }).notNull(),
     derivationMethod: varchar("derivationMethod", { length: 32 }).notNull(),
     derivationVersion: varchar("derivationVersion", { length: 64 }).notNull(),
-    confidenceBasisPoints: int("confidenceBasisPoints"),
+    confidenceBasisPoints: integer("confidenceBasisPoints"),
     evidenceLocatorJson: text("evidenceLocatorJson").notNull(),
     analysisRunId: varchar("analysisRunId", { length: 26 }),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -129,27 +138,27 @@ export const provenanceEdges = mysqlTable(
  * Materialized reviewer records. They are intentionally separate from the
  * original riskFindings table while the live pipeline is introduced gradually.
  */
-export const pipelineFindings = mysqlTable(
+export const pipelineFindings = pgTable(
   "pipelineFindings",
   {
-    id: int("id").autoincrement().primaryKey(),
-    repositoryId: int("repositoryId").notNull().references(() => repositories.id, { onDelete: "cascade" }),
+    id: serial("id").primaryKey(),
+    repositoryId: integer("repositoryId").notNull().references(() => repositories.id, { onDelete: "cascade" }),
     externalId: varchar("externalId", { length: 128 }).notNull().unique(),
     findingNodeId: varchar("findingNodeId", { length: 26 }).notNull(),
     changeNodeId: varchar("changeNodeId", { length: 26 }).notNull(),
     repositoryRevisionNodeId: varchar("repositoryRevisionNodeId", { length: 26 }).notNull(),
     provider: varchar("provider", { length: 64 }).notNull(),
-    severity: mysqlEnum("severity", ["critical", "high", "medium", "low"]).notNull(),
-    status: mysqlEnum("status", ["needs_review", "triaged", "ignored", "resolved"]).default("needs_review").notNull(),
+    severity: severityEnum("severity").notNull(),
+    status: statusEnum("status").default("needs_review").notNull(),
     title: varchar("title", { length: 500 }).notNull(),
     summary: text("summary").notNull(),
     sourceUrl: text("sourceUrl").notNull(),
     evidencePacketJson: text("evidencePacketJson").notNull(),
-    riskScore: int("riskScore").notNull(),
-    confidence: int("confidence").notNull(),
+    riskScore: integer("riskScore").notNull(),
+    confidence: integer("confidence").notNull(),
     matcherVersion: varchar("matcherVersion", { length: 64 }).notNull(),
     detectedAt: timestamp("detectedAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().$onUpdate(() => new Date()).notNull(),
   },
   table => [index("pipeline_finding_repository_idx").on(table.repositoryId, table.riskScore)]
 );
@@ -159,7 +168,7 @@ export const pipelineFindings = mysqlTable(
  * is intentionally not retained: a changed Stripe revision is diffed by fetching
  * the prior committed revision from the provider's public source repository.
  */
-export const providerPollStates = mysqlTable("providerPollStates", {
+export const providerPollStates = pgTable("providerPollStates", {
   provider: varchar("provider", { length: 64 }).primaryKey(),
   sourceUrl: text("sourceUrl").notNull(),
   scheduleCronTaskUid: varchar("scheduleCronTaskUid", { length: 65 }),
@@ -168,10 +177,10 @@ export const providerPollStates = mysqlTable("providerPollStates", {
   contentSha256: varchar("contentSha256", { length: 64 }),
   lastAttemptAt: timestamp("lastAttemptAt"),
   lastSuccessAt: timestamp("lastSuccessAt"),
-  lastStatus: mysqlEnum("lastStatus", ["idle", "unchanged", "changed", "failed"]).default("idle").notNull(),
+  lastStatus: lastStatusEnum("lastStatus").default("idle").notNull(),
   lastError: text("lastError"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().$onUpdate(() => new Date()).notNull(),
 });
 
 /**
@@ -179,17 +188,17 @@ export const providerPollStates = mysqlTable("providerPollStates", {
  * duplicating provider documents. The content hash and revisions are sufficient
  * to reproduce a diff from public provider source history.
  */
-export const providerPollRuns = mysqlTable(
+export const providerPollRuns = pgTable(
   "providerPollRuns",
   {
-    id: int("id").autoincrement().primaryKey(),
+    id: serial("id").primaryKey(),
     provider: varchar("provider", { length: 64 }).notNull(),
     priorCommitSha: varchar("priorCommitSha", { length: 128 }),
     nextCommitSha: varchar("nextCommitSha", { length: 128 }),
     etag: varchar("etag", { length: 512 }),
     contentSha256: varchar("contentSha256", { length: 64 }),
-    outcome: mysqlEnum("outcome", ["unchanged", "changed", "failed"]).notNull(),
-    changeCount: int("changeCount").default(0).notNull(),
+    outcome: outcomeEnum("outcome").notNull(),
+    changeCount: integer("changeCount").default(0).notNull(),
     errorSummary: varchar("errorSummary", { length: 1000 }),
     executedAt: timestamp("executedAt").defaultNow().notNull(),
   },
@@ -202,17 +211,17 @@ export const providerPollRuns = mysqlTable(
  * are reproducibly retrieved by immutable public commit instead. Repository
  * source code is never retained in this table.
  */
-export const providerSourceSnapshots = mysqlTable(
+export const providerSourceSnapshots = pgTable(
   "providerSourceSnapshots",
   {
-    id: int("id").autoincrement().primaryKey(),
+    id: serial("id").primaryKey(),
     provider: varchar("provider", { length: 64 }).notNull(),
     sourceKind: varchar("sourceKind", { length: 64 }).notNull(),
     sourceUrl: text("sourceUrl").notNull(),
     sourceRef: varchar("sourceRef", { length: 128 }).notNull(),
     contentSha256: varchar("contentSha256", { length: 64 }).notNull(),
     contentType: varchar("contentType", { length: 255 }).notNull(),
-    body: mediumtext("body").notNull(),
+    body: text("body").notNull(),
     retrievedAt: timestamp("retrievedAt").notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
@@ -227,16 +236,16 @@ export const providerSourceSnapshots = mysqlTable(
  * counts. Code facts remain in provenance; complete source file contents do not
  * enter the database.
  */
-export const repositoryScanRuns = mysqlTable(
+export const repositoryScanRuns = pgTable(
   "repositoryScanRuns",
   {
-    id: int("id").autoincrement().primaryKey(),
-    repositoryId: int("repositoryId").notNull().references(() => repositories.id, { onDelete: "cascade" }),
+    id: serial("id").primaryKey(),
+    repositoryId: integer("repositoryId").notNull().references(() => repositories.id, { onDelete: "cascade" }),
     commitSha: varchar("commitSha", { length: 128 }).notNull(),
-    status: mysqlEnum("status", ["succeeded", "failed"]).notNull(),
-    fileCount: int("fileCount").default(0).notNull(),
-    dependencyCount: int("dependencyCount").default(0).notNull(),
-    codeEvidenceCount: int("codeEvidenceCount").default(0).notNull(),
+    status: scanStatusEnum("status").notNull(),
+    fileCount: integer("fileCount").default(0).notNull(),
+    dependencyCount: integer("dependencyCount").default(0).notNull(),
+    codeEvidenceCount: integer("codeEvidenceCount").default(0).notNull(),
     errorSummary: varchar("errorSummary", { length: 1000 }),
     scannedAt: timestamp("scannedAt").defaultNow().notNull(),
   },
