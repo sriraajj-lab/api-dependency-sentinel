@@ -1,5 +1,5 @@
 import { and, desc, eq, gt } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { githubConnectSessions, InsertUser, pipelineFindings, providerPollRuns, providerPollStates, providerSourceSnapshots, provenanceEdges, provenanceNodes, repositories, repositoryScanRuns, riskFindings, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 import type { ProvenancePlan } from "./intelligence/provenance";
@@ -71,7 +71,8 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
+    await db.insert(users).values(values).onConflictDoUpdate({
+      target: users.openId,
       set: updateSet,
     });
   } catch (error) {
@@ -146,8 +147,8 @@ export async function upsertConnectedRepository(input: { userId: number; githubR
     await db.update(repositories).set(values).where(eq(repositories.id, existing[0].id));
     return existing[0].id;
   }
-  const inserted = await db.insert(repositories).values({ userId: input.userId, githubRepositoryId: input.githubRepositoryId, ...values });
-  return Number(inserted[0].insertId);
+  const inserted = await db.insert(repositories).values({ userId: input.userId, githubRepositoryId: input.githubRepositoryId, ...values }).returning({ id: repositories.id });
+  return inserted[0].id;
 }
 
 export async function listRepositoryFindings(repositoryId: number) {
@@ -254,8 +255,8 @@ export async function persistProvenancePlan(repositoryId: number, plan: Provenan
       externalId,
       repositoryId,
       ...findingValues,
-    });
-    return Number(inserted[0].insertId);
+    }).returning({ id: pipelineFindings.id });
+    return inserted[0].id;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown provenance persistence error";
     throw new Error(`Failed to persist provenance plan: ${message}`);
@@ -304,7 +305,7 @@ export async function saveProviderSourceSnapshot(snapshot: SourceSnapshot) {
     contentType: snapshot.contentType,
     body: snapshot.body,
     retrievedAt,
-  }).onDuplicateKeyUpdate({ set: { retrievedAt } });
+  }).onConflictDoUpdate({ target: [providerSourceSnapshots.provider, providerSourceSnapshots.contentSha256], set: { retrievedAt } });
 }
 
 export async function listLatestProviderSourceSnapshots(provider: string, limit = 2) {
@@ -341,7 +342,8 @@ export async function upsertProviderPollState(input: {
     lastSuccessAt: input.lastSuccessAt ?? null,
     lastStatus: input.lastStatus ?? "idle",
     lastError: input.lastError ?? null,
-  }).onDuplicateKeyUpdate({
+  }).onConflictDoUpdate({
+    target: providerPollStates.provider,
     set: {
       sourceUrl: input.sourceUrl,
       scheduleCronTaskUid: input.scheduleCronTaskUid ?? null,

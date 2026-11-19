@@ -3,16 +3,14 @@ import express from "express";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
-import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { isSupportedGitHubWebhookEvent, verifyGitHubWebhookSignature } from "../githubWebhook";
-import { createScheduledStripePollHandler } from "../scheduledStripePoll";
-import { createScheduledOpenAiPollHandler } from "../scheduledOpenAiPoll";
-import { createScheduledTwilioPollHandler } from "../scheduledTwilioPoll";
 import { createGitHubConnectHandlers } from "../githubConnect";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { getDb } from "../db";
+import { startProviderPollScheduler } from "../scheduler";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -33,8 +31,20 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
+async function runMigrations() {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] DATABASE_URL not set; skipping migrations.");
+    return;
+  }
+  await migrate(db, { migrationsFolder: process.env.MIGRATIONS_DIR ?? "drizzle" });
+}
+
 async function startServer() {
+  await runMigrations();
   const app = express();
+  app.set("trust proxy", true);
+  app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
   const server = createServer(app);
   app.post("/api/github/webhook", express.raw({ type: "application/json", limit: "25mb" }), (req, res) => {
     const signature = req.header("x-hub-signature-256");
@@ -59,17 +69,12 @@ async function startServer() {
     console.info(`[GitHub webhook] accepted ${event} delivery ${deliveryId}`);
     return res.status(202).json({ accepted: true, event });
   });
-  app.post("/api/scheduled/stripe-poll", createScheduledStripePollHandler());
-  app.post("/api/scheduled/openai-poll", createScheduledOpenAiPollHandler());
-  app.post("/api/scheduled/twilio-poll", createScheduledTwilioPollHandler());
   const githubConnect = createGitHubConnectHandlers();
   app.get("/api/github/connect/start", githubConnect.start);
   app.get("/api/github/connect/callback", githubConnect.callback);
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
-  registerStorageProxy(app);
-  registerOAuthRoutes(app);
   // tRPC API
   app.use(
     "/api/trpc",
@@ -95,6 +100,7 @@ async function startServer() {
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });
+  startProviderPollScheduler();
 }
 
 startServer().catch(console.error);

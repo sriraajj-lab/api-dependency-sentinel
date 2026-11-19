@@ -12,8 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-const heroImage = "/manus-storage/api-sentinel-hero_1b0c4c7f.jpg";
-const mark = "/manus-storage/api-sentinel-mark_72bfe6eb.png";
+const mark = "/sentinel-mark.svg";
 
 const steps = [
   ["01", "Map", "Connect a repository. Sentinel identifies supported API clients, webhook handlers, and likely integration owners."],
@@ -53,7 +52,7 @@ export default function Home() {
 
       <main>
         <section className="relative isolate overflow-hidden border-b border-white/10">
-          <img src={heroImage} alt="Abstract dependency signals moving through a deep blue infrastructure field" className="absolute inset-0 -z-20 h-full w-full object-cover object-right opacity-70" />
+          <div aria-hidden="true" className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_78%_30%,rgba(241,200,91,.22),transparent_38%),radial-gradient(circle_at_60%_80%,rgba(86,120,255,.28),transparent_45%)]" />
           <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,#101629_0%,rgba(16,22,41,.96)_35%,rgba(16,22,41,.72)_62%,rgba(16,22,41,.36)_100%)]" />
           <div className="absolute inset-x-0 bottom-0 -z-10 h-[35%] bg-[linear-gradient(transparent,#101629)]" />
           <div className="mx-auto grid min-h-[690px] max-w-7xl items-end px-5 pb-14 pt-20 lg:px-8 lg:pb-16 lg:pt-28">
